@@ -47,7 +47,7 @@ import {
   flexRender,
   Row,
 } from "@tanstack/react-table";
-import { ReviewerDatset } from "@/app/types/project";
+import { ReviewerDataset } from "@/app/types/project";
 import { SortingState } from "@tanstack/react-table";
 import { toast } from "sonner";
 import { formatDateMedium } from "@/app/types/dateUtils";
@@ -66,6 +66,7 @@ interface MicroTaskListProps {
   verificationStatus?: string;
   status_data: string;
   reviewerIds?: string[] | undefined;
+  isUncertain?: boolean;
   setVerificationStatus: (status: string | undefined) => void;
   onInnerDialogOpenChange?: (open: boolean) => void;
 }
@@ -176,6 +177,7 @@ const MicroTaskList: React.FC<MicroTaskListProps> = ({
   createdDate,
   onInnerDialogOpenChange,
   reviewerIds,
+  isUncertain,
 }) => {
   const { data: session } = useSession();
   const { data: dynamicResponsedataAnnotation, isLoading: annotationLoading } =
@@ -235,7 +237,7 @@ const MicroTaskList: React.FC<MicroTaskListProps> = ({
   const [currentRowIndex, setCurrentRowIndex] = useState<number | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedMicroTask, setSelectedMicroTask] =
-    useState<ReviewerDatset | null>(null);
+    useState<ReviewerDataset | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [isReviewStatusOpen, setIsReviewStatusOpen] = useState(false);
   const [isDetailReviewStatusOpen, setIsDetailReviewStatusOpen] =
@@ -247,7 +249,7 @@ const MicroTaskList: React.FC<MicroTaskListProps> = ({
   }, [status_data, setMicroTaskPage]);
 
   // Modal handlers
-  const handleViewDetails = (microTask: ReviewerDatset) => {
+  const handleViewDetails = (microTask: ReviewerDataset) => {
     setSelectedMicroTask(microTask);
     setIsDetailModalOpen(true);
   };
@@ -275,11 +277,12 @@ const MicroTaskList: React.FC<MicroTaskListProps> = ({
     status: statusFilter,
     verificationStatus,
     reviewerIds: Array.isArray(reviewerIds) ? reviewerIds : undefined,
+    is_uncertain: isUncertain,
   });
 
   const { data: rejectionReasonsData } = useReject();
 
-  const microtasks: ReviewerDatset[] = Array.isArray(
+  const microtasks: ReviewerDataset[] = Array.isArray(
     microtasksData?.data?.result,
   )
     ? microtasksData!.data.result
@@ -514,7 +517,7 @@ const MicroTaskList: React.FC<MicroTaskListProps> = ({
     }
   }, [microtasks, currentRowIndex, isDialogOpen, isRefetching]);
 
-  const microTaskColumns: ColumnDef<ReviewerDatset>[] = [
+  const microTaskColumns: ColumnDef<ReviewerDataset>[] = [
     {
       accessorKey: "code",
       header: "Code",
@@ -661,7 +664,7 @@ const MicroTaskList: React.FC<MicroTaskListProps> = ({
           {
             accessorKey: "",
             header: "Submissions",
-            cell: ({ row }: { row: Row<ReviewerDatset> }) => (
+            cell: ({ row }: { row: Row<ReviewerDataset> }) => (
               <Button
                 className="bg-primary text-white hover:bg-blue-700 -ml-3 rounded-2xl"
                 onClick={() => {
@@ -1147,6 +1150,22 @@ const MicroTaskList: React.FC<MicroTaskListProps> = ({
                                           </div>
                                         )}
 
+                                  {review.flag_reason &&
+                                        Array.isArray(
+                                          review.flag_reason,
+                                        ) &&
+                                        review.flag_reason.length > 0 && (
+                                          <div className="mt-2 border border-red-200 rounded-lg px-3 py-2">
+                                            <p className="text-xs font-semibold text-red-400 mb-1">
+                                              Flag Reason
+                                            </p>
+                                            <p className="text-xs text-red-400">
+                                              {review.flag_reason.join(
+                                                ", ",
+                                              )}
+                                            </p>
+                                          </div>
+                                        )}
                                       {review.comment && (
                                         <div className="mt-2 border border-gray-200 rounded-lg px-3 py-2">
                                           <p className="text-xs font-semibold text-gray-600 mb-1">

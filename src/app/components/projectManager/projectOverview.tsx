@@ -22,6 +22,7 @@ import {
   TooltipItem,
 } from "chart.js";
 import { Loader2 } from "lucide-react";
+import { useTranslation } from "@/lib/hooks/useTranslation";
 ChartJS.register(
   CategoryScale,
   LinearScale,
@@ -30,7 +31,7 @@ ChartJS.register(
   LineElement,
   Title,
   Tooltip,
-  Legend
+  Legend,
 );
 
 const stats = [
@@ -55,6 +56,7 @@ interface TaskTableProps {
 }
 const ProjectOverview: React.FC<TaskTableProps> = ({ projectId }) => {
   const [viewType, setViewType] = useState("WEEKLY");
+  const { t } = useTranslation();
   const { data: superadminData, isLoading: superadminLoading } =
     useSingleprojecStatisticsProject(projectId);
   const { data: datasetData, isLoading: datasetLoading } =
@@ -132,25 +134,25 @@ const ProjectOverview: React.FC<TaskTableProps> = ({ projectId }) => {
   const metrics = superadminData?.data
     ? [
         {
-          title: "Total Tasks",
+          title: t("totalTasks"),
           value: superadminData.data.total_tasks,
           change: "bg-blue-100",
           icon: projecIcon,
         },
         {
-          title: "Total Micro Tasks",
+          title: t("totalMicroTasks"),
           value: superadminData.data.total_micro_tasks,
           change: "bg-white",
           icon: totalmictotaskIcon,
         },
         {
-          title: "Total Datasets",
+          title: t("totalDatasets"),
           value: superadminData.data.total_data_sets,
           change: "bg-blue-100",
           icon: TotalMicroTasksIcon,
         },
         {
-          title: "Total Users",
+          title: t("totalUsers"),
           value:
             superadminData.data.total_reviewers +
             superadminData.data.total_contributors +
@@ -169,7 +171,7 @@ const ProjectOverview: React.FC<TaskTableProps> = ({ projectId }) => {
         return Array.from({ length: 12 }, (_, i) =>
           new Date(currentYear, i, 1).toLocaleString("default", {
             month: "short",
-          })
+          }),
         );
       case "YEARLY":
         return [
@@ -190,7 +192,7 @@ const ProjectOverview: React.FC<TaskTableProps> = ({ projectId }) => {
           let index: number;
           switch (viewType) {
             case "WEEKLY":
-              index = (date - 1) % 7; // Map 1-7 to 0-6 index
+              index = item.date === 0 ? 6 : item.date - 1; // 0=Sunday→6, 1-6=Mon-Sat→0-5
               break;
             case "MONTHLY":
               index = (date - 1) % 12; // Map 1-12 to 0-11 index
@@ -295,9 +297,9 @@ const ProjectOverview: React.FC<TaskTableProps> = ({ projectId }) => {
             value={viewType}
             onChange={(e) => setViewType(e.target.value)}
           >
-            <option value="WEEKLY">Weekly</option>
-            <option value="MONTHLY">Monthly</option>
-            <option value="YEARLY">Yearly</option>
+            <option value="WEEKLY">{t("weekly")}</option>
+            <option value="MONTHLY">{t("monthly")}</option>
+            <option value="YEARLY">{t("yearly")}</option>
           </select>
         </div>
         <div className="relative w-full h-[350px] md:h-[400px] lg:h-[450px]">

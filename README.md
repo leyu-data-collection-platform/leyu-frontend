@@ -211,14 +211,14 @@ Follow these step-by-step instructions to set up the project locally:
 
 3. **Set up environment variables**
    
-   Create a `.env` file in the root directory by copying the example file:
+   Create a `.env` file in the root directory and configure the following environment variables:
    
    ```bash
-   # Copy the example environment file
+   # Copy the example environment file (if available)
    cp .env.example .env
    ```
    
-   Then edit the `.env` file with your configuration:
+   Or create a new `.env` file with the following variables:
    
    ```env
    # Base API URLs
@@ -228,12 +228,6 @@ Follow these step-by-step instructions to set up the project locally:
    # NextAuth Configuration
    NEXTAUTH_SECRET=your-strong-secret-here
    NEXTAUTH_URL=http://localhost:3000
-   ```
-   
-   **Important**: Replace `your-strong-secret-here` with a secure random string. You can generate one using:
-   ```bash
-   # Generate a secure secret
-   openssl rand -base64 32
    ```
 
 4. **Start the development server**
@@ -764,56 +758,48 @@ For more complex deployments or when you need to coordinate multiple services, u
 
 ```bash
 # Start the application using Docker Compose
-docker-compose up
+docker-compose -f docker-compose.front.yaml up
 
 # Start in detached mode (background)
-docker-compose up -d
+docker-compose -f docker-compose.front.yaml up -d
 
 # Stop the application
-docker-compose down
+docker-compose -f docker-compose.front.yaml down
 
 # Rebuild and start (useful after code changes)
-docker-compose up --build
+docker-compose -f docker-compose.front.yaml up --build
 ```
 
 #### Docker Compose Configuration
 
-The `docker-compose.yml` file includes:
+The `docker-compose.front.yaml` file includes:
 
 ```yaml
-version: "3.8"
+version: "3.3"
 services:
-  leyu-frontend:
-    image: ${DOCKER_IMAGE_NAME:-leyu-frontend}:${DOCKER_IMAGE_TAG:-latest}
+  app:
+    image: ${DC_FRONT_IMAGE_NAME}:${DC_FRONT_IMAGE_TAG}
     environment:
-      - NEXT_PUBLIC_API_BASE_URL=${NEXT_PUBLIC_API_BASE_URL:-http://localhost:3003/api}
-      - NEXT_PUBLIC_BASE_URL=${NEXT_PUBLIC_BASE_URL:-http://localhost:3000}
-      - NEXTAUTH_SECRET=${NEXTAUTH_SECRET:-your-strong-secret-here}
-      - NEXTAUTH_URL=${NEXTAUTH_URL:-http://localhost:3000}
+      - NEXT_PUBLIC_API_BASE_URL=http://159.223.203.142:3003/api
+      - NEXT_PUBLIC_BASE_URL=http://159.223.203.142:3002
+      - NEXTAUTH_SECRET=your-strong-secret-here
+      - NEXTAUTH_URL=http://159.223.203.142:3002
     ports:
-      - ${HOST_PORT:-3000}:3000
+      - ${DC_FRONT_APP_PORT}:3000
 ```
 
 **Environment Variables for Docker Compose:**
-- `DOCKER_IMAGE_NAME`: Docker image name (e.g., `leyu-frontend`)
-- `DOCKER_IMAGE_TAG`: Docker image tag (e.g., `latest`, `v1.0.0`)
-- `HOST_PORT`: Host port to map to container port 3000
-- `NEXT_PUBLIC_API_BASE_URL`: Backend API URL
-- `NEXT_PUBLIC_BASE_URL`: Frontend application URL
-- `NEXTAUTH_SECRET`: Authentication secret key
-- `NEXTAUTH_URL`: Authentication callback URL
+- `DC_FRONT_IMAGE_NAME`: Docker image name (e.g., `leyu-frontend`)
+- `DC_FRONT_IMAGE_TAG`: Docker image tag (e.g., `latest`, `v1.0.0`)
+- `DC_FRONT_APP_PORT`: Host port to map to container port 3000
 
 **Setting Environment Variables:**
 Create a `.env` file in the same directory as the Docker Compose file:
 
 ```env
-DOCKER_IMAGE_NAME=leyu-frontend
-DOCKER_IMAGE_TAG=latest
-HOST_PORT=3000
-NEXT_PUBLIC_API_BASE_URL=http://localhost:3003/api
-NEXT_PUBLIC_BASE_URL=http://localhost:3000
-NEXTAUTH_SECRET=your-strong-secret-here
-NEXTAUTH_URL=http://localhost:3000
+DC_FRONT_IMAGE_NAME=leyu-frontend
+DC_FRONT_IMAGE_TAG=latest
+DC_FRONT_APP_PORT=3000
 ```
 
 ### Production Build
@@ -1009,34 +995,6 @@ pnpm lint --fix            # Auto-fix linting issues where possible
 - **`start`**: Requires a successful `pnpm build` to have been run first
 - **`lint`**: Runs independently but may reference TypeScript configuration for type checking
 
-## Security
-
-### Security Considerations
-
-When deploying LeYu Frontend, please consider the following security best practices:
-
-#### Environment Variables
-- Never commit `.env` files with real credentials to version control
-- Use strong, randomly generated secrets (minimum 32 characters)
-- Rotate secrets regularly in production environments
-- Use environment variable management tools for production deployments
-
-#### HTTPS in Production
-- Always use HTTPS in production environments
-- Ensure SSL certificates are properly configured and up to date
-- Configure proper CORS settings on your backend API
-
-#### Authentication
-- Use strong `NEXTAUTH_SECRET` values in production
-- Implement proper session management and timeout policies
-- Consider implementing additional security measures like rate limiting
-
-#### Reporting Security Issues
-If you discover a security vulnerability, please report it responsibly:
-1. **Do not** create a public GitHub issue
-2. Email the maintainers directly with details
-3. Allow time for the issue to be addressed before public disclosure
-
 ## Documentation
 
 For comprehensive information about using the LeYu Frontend system, refer to the following documentation resources:
@@ -1135,37 +1093,23 @@ Before contacting support, try these self-help options:
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-### Open Source
-
-LeYu Frontend is an open source project. We welcome contributions from the community! Please read our [Contributing Guidelines](CONTRIBUTING.md) to get started.
-
-#### Contributing
-
-We encourage contributions of all kinds:
-- Bug reports and fixes
-- Feature requests and implementations
-- Documentation improvements
-- Code quality enhancements
-- Accessibility improvements
-
-Please see [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines on how to contribute.
-
-#### Community
-
-- **Issues**: Report bugs and request features through [GitHub Issues](../../issues)
-- **Discussions**: Join community discussions and ask questions
-- **Pull Requests**: Submit your contributions through pull requests
+This project's licensing information is managed by your organization. Please contact your system administrator or legal department for specific licensing details and terms of use.
 
 ### Usage Rights
 
-This open source project is available under the MIT License, which allows for:
+The usage rights for the LeYu Frontend system are determined by your organization's licensing agreement. Generally, usage is restricted to:
 
-- Commercial and non-commercial use
-- Modification and distribution
-- Private use
-- Patent use (with limitations)
+- Authorized users within your organization
+- Approved business purposes and workflows
+- Compliance with your organization's data handling and security policies
 
-Please ensure compliance with the license terms and include proper attribution when using or distributing this software.
+### Third-Party Licenses
+
+This project uses various open-source libraries and frameworks. The licenses for these dependencies can be found in:
+
+- **package.json**: Lists all dependencies and their versions
+- **node_modules**: Contains individual license files for each dependency
+- **License Compliance**: Your organization is responsible for ensuring compliance with all third-party licenses
+
+For specific questions about licensing, intellectual property, or usage rights, please consult with your organization's legal or compliance team.
 

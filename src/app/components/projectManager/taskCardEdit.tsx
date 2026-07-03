@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/dialogLeft";
 import { useBasedataall, useBasedataTaskType } from "@/lib/hooks/useBasedata";
 import { useUpdateBasicTAsk, useDeleteTask } from "@/lib/hooks/useProject";
+import { useTranslation } from "@/lib/hooks/useTranslation";
 
 interface TaskCardProps {
   task: TaskCardType;
@@ -30,6 +31,7 @@ interface UpdateTaskForm {
 }
 
 const TaskCard: React.FC<TaskCardProps> = ({ task, onClick }) => {
+  const { t } = useTranslation();
   const { data: languageData, isLoading: isLanguageLoading } = useBasedataall({
     servicename: "language",
   });
@@ -174,7 +176,7 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onClick }) => {
             >
       
 
-              {task.is_closed ? "Inactive" : "Active"}
+              {task.is_closed ? t("inactive") : t("active")}
             </span>
           </div>
         </div>
@@ -184,7 +186,7 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onClick }) => {
         {/* Left column - Type */}
         <div className="flex flex-col">
           <span className="text-gray-500 font-medium uppercase tracking-wide">
-            Type
+            {t("typeLabel")}
           </span>
           <span className="font-medium px-1.5 py-0.5 bg-purple-100 text-purple-800 rounded inline-block mt-0.5">
             {task.taskType?.task_type || "Text to Audio"}
@@ -194,7 +196,7 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onClick }) => {
         {/* Right column - Created */}
         <div className="flex flex-col">
           <span className="text-gray-500 font-medium uppercase tracking-wide">
-            Created
+            {t("createdDate")}
           </span>
           <span className="font-medium mt-0.5">
             {task.created_date ? formatDateMedium(task.created_date) : "—"}
@@ -233,7 +235,7 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onClick }) => {
               strokeWidth="1.25"
             />
           </svg>{" "}
-          View Details
+          {t("viewDetails")}
         </Button>
 
         <div className="relative" ref={dropdownRef}>
@@ -285,7 +287,7 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onClick }) => {
                       strokeLinejoin="round"
                     />
                   </svg>
-                  Edit
+                  {t("edit")}
                 </button>
                 <button
                   onClick={() => {
@@ -308,7 +310,7 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onClick }) => {
                       strokeWidth="1.25"
                     />
                   </svg>
-                  Delete task
+                  {t("deleteProject")}
                 </button>
               </div>
             </div>
@@ -319,18 +321,18 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onClick }) => {
         <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
           <DialogContent className="w-full">
             <DialogHeader>
-              <DialogTitle>Edit Task</DialogTitle>
+              <DialogTitle>{t("edit")} {t("taskName")}</DialogTitle>
             </DialogHeader>
             <div className="space-y-2">
               <label className="block text-sm font-medium text-gray-700">
-                Name <span className="text-red-500">*</span>
+                {t("taskNameLabel")} <span className="text-red-500">*</span>
               </label>
               <input
                 name="name"
                 required
                 value={formData.name}
                 onChange={handleChange}
-                placeholder="Enter task name"
+                placeholder={t("enterTaskName")}
                 className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
                   errors.name ? "border-red-500" : "border-gray-300"
                 }`}
@@ -341,7 +343,7 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onClick }) => {
             </div>
             <div className="space-y-2">
               <label className="block text-sm font-medium text-gray-700">
-                Task Type <span className="text-red-500">*</span>
+                {t("taskType")} <span className="text-red-500">*</span>
               </label>
               <select
                 name="task_type_id"
@@ -351,7 +353,7 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onClick }) => {
                   errors.task_type_id ? "border-red-500" : "border-gray-300"
                 }`}
               >
-                <option value="">Select task type</option>
+                <option value="">{t("selectTaskType")}</option>
                 {taskTypeOptions.map(
                   (task_type: { id: string; name: string }) => (
                     <option key={task_type.id} value={task_type.id}>

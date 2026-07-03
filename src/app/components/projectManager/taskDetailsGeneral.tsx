@@ -4,7 +4,7 @@ import InstructionView from "@/app/components/projectManager/instructionView";
 import { TaskInstructions } from "@/app/types/project";
 import { TaskResponseData } from "@/app/types/project";
 import CreateTaskInstruction from "@/app/components/projectManager/createTaskInstruction";
-import UpdateTAskForm from "@/app/components/projectManager/updateTaskForm";
+import { UpdateTask } from "@/app/components/projectManager/updateTaskForm";
 import UpdateProjectModal from "../projectManager/updatePayment";
 import { useTranslation } from "@/lib/hooks/useTranslation";
 import { ChevronDown } from "lucide-react";
@@ -22,6 +22,9 @@ const TaskDetailsGeneral: React.FC<TaskCardProps> = ({ task, type }) => {
   const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
   const [selectedInstruction, setSelectedInstruction] = useState<any>(null);
   const [showInstruction, setShowInstruction] = useState(false);
+  const [selectedEditCategory, setSelectedEditCategory] = useState<
+    "basic" | "demographics" | "location" | "configuration"
+  >("demographics");
   const handleOpenInstruction = (instruction: TaskInstructions) => {
     setSelectedInstruction(instruction);
     setTimeout(() => {
@@ -75,11 +78,18 @@ const TaskDetailsGeneral: React.FC<TaskCardProps> = ({ task, type }) => {
       </>
     );
   };
-  const EditSVG: React.FC = () => {
+  const EditSVG: React.FC<{
+    category: "basic" | "demographics" | "location" | "configuration";
+  }> = ({ category }) => {
     return (
       <>
         {type ? (
-          <button onClick={() => setEditTaskScreen(true)}>
+          <button
+            onClick={() => {
+              setSelectedEditCategory(category);
+              setEditTaskScreen(true);
+            }}
+          >
             <svg
               width="30"
               height="25"
@@ -132,9 +142,10 @@ const TaskDetailsGeneral: React.FC<TaskCardProps> = ({ task, type }) => {
         <>
           {editTaskScreen ? (
             <>
-              <UpdateTAskForm
+              <UpdateTask
                 task={task}
                 onCancel={() => setEditTaskScreen(false)}
+                selectedCategory={selectedEditCategory}
               />
             </>
           ) : (
@@ -176,6 +187,7 @@ const TaskDetailsGeneral: React.FC<TaskCardProps> = ({ task, type }) => {
                       />
                     </svg>
                     {t("basicInformation")}
+                    <EditSVG category="basic" />
                   </h3>
 
                   <p className="text-sm break-words  text-gray-600 mb-4">
@@ -258,7 +270,8 @@ const TaskDetailsGeneral: React.FC<TaskCardProps> = ({ task, type }) => {
                         strokeWidth="1.8"
                       />
                     </svg>
-                    {t("demographicsTargeting")} <EditSVG />
+                    {t("demographicsTargeting")}{" "}
+                    <EditSVG category="demographics" />
                   </h3>
 
                   <div className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
@@ -337,7 +350,7 @@ const TaskDetailsGeneral: React.FC<TaskCardProps> = ({ task, type }) => {
                         strokeWidth="1.8"
                       />
                     </svg>
-                    {t("locationSectors")} <EditSVG />
+                    {t("locationSectors")} <EditSVG category="location" />
                   </h3>
 
                   <div className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
@@ -365,19 +378,8 @@ const TaskDetailsGeneral: React.FC<TaskCardProps> = ({ task, type }) => {
                       </span>
                       <span className="text-gray-600 mt-1">
                         {Array.isArray(task.taskRequirement?.locations)
-                          ? task.taskRequirement.locations
-                              .map((l) => l.name)
-                              .join(", ") || t("naValue")
-                          : task.taskRequirement?.locations &&
-                              typeof task.taskRequirement.locations ===
-                                "object" &&
-                              "name" in task.taskRequirement.locations
-                            ? (
-                                task.taskRequirement.locations as {
-                                  name: string;
-                                }
-                              ).name
-                            : t("naValue")}
+                          ? task.taskRequirement.locations.join(", ") || t("naValue")
+                          : t("naValue")}
                       </span>
                     </div>
 
@@ -405,7 +407,7 @@ const TaskDetailsGeneral: React.FC<TaskCardProps> = ({ task, type }) => {
                       </span>
                       <span className="text-gray-600 mt-1">
                         {task.taskRequirement?.sectors
-                          ?.map((s) => s.name)
+                          ?.map((s) => s)
                           .join(", ") || t("naValue")}
                       </span>
                     </div>
@@ -516,7 +518,6 @@ const TaskDetailsGeneral: React.FC<TaskCardProps> = ({ task, type }) => {
                       className={`w-full flex items-center justify-between p-4 text-left text-sm font-medium text-gray-500 hover:bg-gray-50 ${showInstruction ? "bg-gray-50" : "bg-white"}`}
                     >
                       <div className="flex items-center space-x-2">
-                       
                         <span>Instructions</span>
                       </div>
                       <ChevronDown
@@ -665,7 +666,8 @@ const TaskDetailsGeneral: React.FC<TaskCardProps> = ({ task, type }) => {
                         strokeLinejoin="round"
                       />
                     </svg>
-                    {t("taskConfiguration")} <EditSVG />
+                    {t("taskConfiguration")}{" "}
+                    <EditSVG category="configuration" />
                   </h3>
                   <div className="grid grid-cols-1 gap-3 text-sm">
                     <div className="flex flex-col">

@@ -76,8 +76,6 @@ const PaginationControls: React.FC<{ pagination: PaginationProps }> = ({
 };
 
 const TaskList: React.FC<TaskListProps> = ({}) => {
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
   const router = useRouter();
   const [taskSearchQuery, setTaskSearchQuery] = useState("");
   const debouncedTaskSearch = useDebounce(taskSearchQuery, 500);

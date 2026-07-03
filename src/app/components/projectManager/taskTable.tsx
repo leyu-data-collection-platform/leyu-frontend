@@ -65,6 +65,7 @@ import {
 } from "@/components/ui/dialog";
 import ProjectOverview from "./projectOverview";
 import { FilterComponent } from "@/components/ui/filterComponent";
+import { useTranslation } from "@/lib/hooks/useTranslation";
 
 interface Organization {
   id: string;
@@ -278,6 +279,7 @@ const TaskTable: React.FC<TaskTableProps> = ({
 }) => {
   const router = useRouter();
   const { data: session } = useSession();
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<
     "Overview" | "Project Details" | "Micro Tasks" | "Users" | "Archive"
   >("Micro Tasks");
@@ -456,7 +458,7 @@ const TaskTable: React.FC<TaskTableProps> = ({
   const userColumns: ColumnDef<Project_User>[] = [
     {
       accessorKey: "fullName",
-      header: "Full Name",
+      header: t("fullName"),
       enableSorting: true,
       cell: ({ row }) => (
         <div className="flex items-center">
@@ -469,7 +471,7 @@ const TaskTable: React.FC<TaskTableProps> = ({
     },
       {
     accessorKey: "role",
-    header: "Role",
+    header: t("roleHeader"),
     cell: ({ row }) => {
       const role = row.original?.role;
 
@@ -493,7 +495,7 @@ const TaskTable: React.FC<TaskTableProps> = ({
   },
      {
       accessorKey: "phoneNumber",
-      header: "Phone number",
+      header: t("phoneNumberHeader"),
       enableSorting: true,
       cell: ({ row }) => (
         <div className="flex items-center">
@@ -505,7 +507,7 @@ const TaskTable: React.FC<TaskTableProps> = ({
     },
     {
       accessorKey: "email",
-      header: "Email",
+      header: t("email"),
       enableSorting: true,
       cell: ({ row }) => (
         <div className="flex items-center">
@@ -515,7 +517,7 @@ const TaskTable: React.FC<TaskTableProps> = ({
     },
     {
       accessorKey: "status",
-      header: "Status",
+      header: t("statusHeader"),
       enableSorting: true,
       cell: ({ row }) => (
         <div className="flex items-center space-x-2">
@@ -592,7 +594,7 @@ const TaskTable: React.FC<TaskTableProps> = ({
                 </h2>
               </div>
               <div className="text-xs sm:text-sm text-gray-500">
-                Created on {createdOn ? formatDateMedium(createdOn) : ""}
+                {t("createdOnField")} {createdOn ? formatDateMedium(createdOn) : ""}
               </div>
             </div>
           </div>
@@ -631,7 +633,7 @@ const TaskTable: React.FC<TaskTableProps> = ({
                     strokeLinejoin="round"
                   />
                 </svg>
-                Overview
+                {t("overview")}
               </button>
               <button
                 onClick={() => setActiveTab("Project Details")}
@@ -668,7 +670,7 @@ const TaskTable: React.FC<TaskTableProps> = ({
                     strokeLinejoin="round"
                   />
                 </svg>
-                Project Details
+                {t("projectDetailsTab")}
               </button>
               <button
                 onClick={() => setActiveTab("Micro Tasks")}
@@ -694,7 +696,7 @@ const TaskTable: React.FC<TaskTableProps> = ({
                     strokeLinejoin="round"
                   />
                 </svg>
-                Tasks
+                {t("tasksTab")}
               </button>
               <button
                 onClick={() => setActiveTab("Users")}
@@ -737,7 +739,7 @@ const TaskTable: React.FC<TaskTableProps> = ({
                     strokeWidth="1.5"
                   />
                 </svg>
-                Users
+                {t("usersTab")}
               </button>
               <button
                 onClick={() => setActiveTab("Archive")}
@@ -770,7 +772,7 @@ const TaskTable: React.FC<TaskTableProps> = ({
                     strokeLinejoin="round"
                   />
                 </svg>
-                Archive
+                {t("archiveTab")}
               </button>
             </nav>
           </div>
@@ -784,7 +786,7 @@ const TaskTable: React.FC<TaskTableProps> = ({
               <div className="border border-gray-100 rounded-lg p-4 bg-white  hover:shadow-md transition-shadow">
                 <div className="mb-6">
                   <h3 className="text-lg font-semibold text-gray-800 mb-2">
-                    General Details
+                    {t("generalDetailsSection")}
                   </h3>
                   <div className="mt-2 mb-2">
                     {Array.isArray(tags) && tags.length > 0 ? (
@@ -833,7 +835,7 @@ const TaskTable: React.FC<TaskTableProps> = ({
                   <p className="text-sm text-gray-600">{description}</p>
                   <div className="flex flex-wrap gap-4 mt-2 text-sm text-gray-600">
                     <div>
-                      <span className="font-medium">Status:</span>{" "}
+                      <span className="font-medium">{t("statusField")}:</span>{" "}
                       <span className="text-green-600">
                         {" "}
                         <span
@@ -851,7 +853,7 @@ const TaskTable: React.FC<TaskTableProps> = ({
                     </div>
 
                     <div className="ml-auto">
-                      <span className="font-medium">Created On:</span>{" "}
+                      <span className="font-medium">{t("createdOnField")}:</span>{" "}
                       <div>
                         {" "}
                         <span className="font-medium">
@@ -883,7 +885,7 @@ const TaskTable: React.FC<TaskTableProps> = ({
                     className="bg-primary text-white hover:bg-blue-700 flex items-center gap-2"
                   >
                     <Plus className="h-4 w-4" />
-                    New Task
+                    {t("newTask")}
                   </Button>
                 </div>
               </div>

@@ -1,10 +1,10 @@
 import axios from "axios";
 import { toast } from "sonner";
 import { useSession } from "next-auth/react";
-import { NewProject, TaskCardType,TaskCardReviewer,RejectType, ReviewerDatset,TaskQA, NewTask, MicroTask, UpdateProject, Project, ProjectDetail, ProjectResponse, TaskResponse } from "@/app/types/project";
+import { NewProject, TaskCardType,TaskCardReviewer,RejectType, ReviewerDataset,TaskQA, NewTask, MicroTask, UpdateProject, Project, ProjectDetail, ProjectResponse, TaskResponse } from "@/app/types/project";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { PaginationResponse, SinglerResponse, AllResponse, OneResponse } from "@/app/types/global";
-interface NewTaskMicroTaskResponse extends PaginationResponse<ReviewerDatset> { }
+interface NewTaskMicroTaskResponse extends PaginationResponse<ReviewerDataset> { }
 interface NewProjectTaskResponse extends PaginationResponse<TaskCardType> { }
 interface NewProjectTaskResponseQA extends PaginationResponse<TaskQA> { }
 interface NewProjectTaskResponseList extends PaginationResponse<TaskCardReviewer> { }
@@ -40,6 +40,7 @@ interface NewTaskMicroTasStatuskProps {
     taskId: string;
     status: string;
     reviewerIds?: string[];
+    is_uncertain?:boolean
 }
 export function useGetProjectTask({
     page,
@@ -380,11 +381,12 @@ export function useGetTaskMicroTaskResponseForReviewersQA({
     token,
     status,
     taskId,
-    reviewerIds
+    reviewerIds,
+    is_uncertain
 }: NewTaskMicroTasStatuskProps) {
     const { data: session } = useSession();
     return useQuery<NewTaskMicroTaskResponse>({
-        queryKey: ["taskMicroTasksResultReviewersQA", taskId, status, microTaskPage, microTaskPageSize, searchQuery, verificationStatus, reviewerIds],
+        queryKey: ["taskMicroTasksResultReviewersQA", taskId, status, microTaskPage, microTaskPageSize, searchQuery, verificationStatus, reviewerIds,is_uncertain],
         queryFn: async () => {
 
 
@@ -410,6 +412,9 @@ export function useGetTaskMicroTaskResponseForReviewersQA({
                     reviewerIds.forEach((id) => {
                         params.append("reviewerIds", id);
                     });
+                }
+                if (is_uncertain !== null && is_uncertain !== undefined){
+                    params.append('is_uncertain', is_uncertain ? 'true' : 'false')
                 }
                 
                 const response = await axios.get<NewTaskMicroTaskResponse>(
@@ -617,7 +622,7 @@ export const useApprove = () => {
     const queryClient = useQueryClient();
     const { data: session } = useSession();
     return useMutation({
-        mutationFn: async (userData: { microTaskId: string, annotation_id: string, annotation: string, annotationIds:string [] }) => {
+        mutationFn: async (userData: { microTaskId: string, annotation_id: string, annotation: string, annotationIds:string[], is_uncertain: boolean }) => {
             if (!session?.access_token) {
                 throw new Error("No authentication token available");
             }
@@ -648,13 +653,17 @@ export const useRejectionMicrotask = () => {
             microTaskId: string,
             comment: string;
             rejection_type_ids: string[];
-            flag?:boolean
+            flag?: boolean;
+            flag_type_ids?: string[];
+            is_uncertain?: boolean;
         }) => {
 
             let data = {
                 comment: userData.comment,
                 rejection_type_ids: userData.rejection_type_ids,
-                flag: userData.flag
+                flag: userData.flag,
+                flag_type_ids: userData.flag_type_ids,
+                is_uncertain: userData.is_uncertain,
             }
             if (!session?.access_token) {
                 throw new Error("No authentication token available");

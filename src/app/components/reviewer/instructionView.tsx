@@ -2,6 +2,7 @@
 import React, { useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { useTranslation } from "@/lib/hooks/useTranslation";
 
 interface InstructionViewProps {
   onCancel: () => void;
@@ -26,6 +27,7 @@ const InstructionView: React.FC<InstructionViewProps> = ({
   setOpen,
 }) => {
   console.log(taskInstructions)
+  const { t } = useTranslation();
   const [showEditInstruction, setShowEditInstruction] = useState(false);
   const [showDeleteInstruction, setShowDeleteInstruction] = useState(false);
   if (!taskInstructions) {
@@ -35,7 +37,7 @@ const InstructionView: React.FC<InstructionViewProps> = ({
           onClick={onCancel}
           className="flex items-center text-primary hover:text-blue-800 mb-4"
         >
-          <span className="mr-1">←</span> Back
+          <span className="mr-1">←</span> {t("back")}
         </button>
         <div className="text-red-500">No instructions available.</div>
       </div>
@@ -49,7 +51,7 @@ const InstructionView: React.FC<InstructionViewProps> = ({
         onClick={onCancel}
         className="flex items-center text-primary hover:text-blue-800 mb-4"
       >
-        <span className="mr-1">←</span> Back
+        <span className="mr-1">←</span> {t("back")}
       </button>
 
       {/* Task Header */}

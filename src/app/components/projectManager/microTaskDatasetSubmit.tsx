@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { useGetMicroTaskDataSetProjectMangerDetail } from "@/lib/hooks/useMicrotask";
-import { ReviewerDatset } from "@/app/types/project";
+import { ReviewerDataset } from "@/app/types/project";
 import {
   ArrowUpDown,
   ArrowUp,
@@ -171,10 +171,10 @@ const TaskDatasetSubmit: React.FC<TaskDatasetProps> = ({
     contributor_id: contributor_id,
   });
 
-  const TaskDatasets: ReviewerDatset[] = Array.isArray(
+  const TaskDatasets: ReviewerDataset[] = Array.isArray(
     TaskDatasetsData?.data?.result,
   )
-    ? (TaskDatasetsData?.data.result as ReviewerDatset[])
+    ? (TaskDatasetsData?.data.result as ReviewerDataset[])
     : [];
   const TaskDatasetTotalElements = TaskDatasetsData?.data?.total || 0;
   const TaskDatasetTotalPages = TaskDatasetsData?.data?.totalPages || 1;
@@ -186,7 +186,7 @@ const TaskDatasetSubmit: React.FC<TaskDatasetProps> = ({
     TaskDatasetTotalElements,
   );
 
-  const TaskDatasetColumns: ColumnDef<ReviewerDatset>[] = [
+  const TaskDatasetColumns: ColumnDef<ReviewerDataset>[] = [
     {
       accessorKey: "code",
       header: "ID",

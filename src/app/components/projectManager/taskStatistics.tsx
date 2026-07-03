@@ -48,6 +48,7 @@ import {
 } from "@/lib/hooks/useProject";
 import { useDebounce } from "@/lib/hooks/useDebounce";
 import TaskStatisticsContributers from "@/app/components/projectManager/taskStatisticsContributers";
+import { useTranslation } from "@/lib/hooks/useTranslation";
 // --- INTERFACES ---
 interface LanguageStatistic {
   dialect_id: string;
@@ -263,6 +264,7 @@ export default function TaskStatistics({ task_id }: TaskStatisticsProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [verificationStatus, setVerificationStatus] = useState<string>();
   const debouncedTaskSearch = useDebounce(searchQuery, 500);
+  const { t } = useTranslation();
   const {
     data: microtasksData,
     isLoading: isMicroTaskLoading,
@@ -297,15 +299,9 @@ export default function TaskStatistics({ task_id }: TaskStatisticsProps) {
     isError: boolean;
   };
 
-  const userColumns: ColumnDef<UserData>[] = [
-    { accessorKey: "fullName", header: "Full Name" },
-    { accessorKey: "microtasksAssigned", header: "Assigned" },
-    { accessorKey: "microtasksCompleted", header: "Completed" },
-    { id: "actions", cell: () => <Eye className="h-4 w-4 text-gray-500" /> },
-  ];
   const microTaskColumns: ColumnDef<MicroTaskStatistic>[] = [
     {
-      header: "Code",
+      header: t("codeHeader"),
       enableSorting: true,
       cell: ({ row }) => (
         <div className="min-w-[150px] max-w-[300px] truncate">
@@ -313,10 +309,9 @@ export default function TaskStatistics({ task_id }: TaskStatisticsProps) {
         </div>
       ),
     },
-
     {
       accessorKey: "",
-      header: "No of contributors",
+      header: t("noOfContributors"),
       enableSorting: true,
       cell: ({ row }) => (
         <div className="min-w-[150px] max-w-[300px] truncate">
@@ -326,14 +321,36 @@ export default function TaskStatistics({ task_id }: TaskStatisticsProps) {
     },
     {
       accessorKey: "",
-      header: "Expected no of contributors",
+      header: t("totalFemales"),
+      enableSorting: true,
+      cell: ({ row }) => (
+        <div className="min-w-[150px] max-w-[300px] truncate">
+          {row.original.total_female || " "}
+        </div>
+      ),
+    },
+    {
+      accessorKey: "",
+      header: t("totalMales"),
+      enableSorting: true,
+      cell: ({ row }) => (
+        <div className="min-w-[150px] max-w-[300px] truncate">
+          {row.original.total_male || " "}
+        </div>
+      ),
+    },
+    
+    {
+      accessorKey: "",
+      header: t("expectedNoOfContributors"),
       enableSorting: true,
       cell: ({ row }) => (
         <div className="min-w-[150px] max-w-[300px] truncate">
           {row.original.expected_no_of_contributors || " "}
         </div>
       ),
-    },
+    }
+    
   ];
   const microTaskTable = useReactTable({
     data: microtasks,
@@ -372,7 +389,7 @@ export default function TaskStatistics({ task_id }: TaskStatisticsProps) {
                 : "bg-transparent text-gray-600 hover:bg-white/70"
             }`}
           >
-            Distributed Users
+            {t("distributedUsers")}
           </button>
           <button
             onClick={() => setActiveTab("microtasks-list")}
@@ -382,7 +399,7 @@ export default function TaskStatistics({ task_id }: TaskStatisticsProps) {
                 : "bg-transparent text-gray-600 hover:bg-white/70"
             }`}
           >
-            Micro Tasks List
+            {t("microTasksList")}
           </button>
         </div>
       </div>
@@ -394,14 +411,14 @@ export default function TaskStatistics({ task_id }: TaskStatisticsProps) {
             {/* Row 1: Contributor Status */}
             <div className="border border-gray-100 rounded-lg px-4 py-4">
               <h2 className="text-lg font-semibold text-gray-800 mb-2 flex items-center gap-2">
-                <Users size={20} /> Contributors Status Statistics
+                <Users size={20} /> {t("contributorsStatusStats")}
               </h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 <div className="bg-blue-50/50 text-center p-4">
                   <p className="text-3xl font-bold text-primary">
                     {stats?.data?.total_contributor_micro_tasks?.["New"] ?? "0"}
                   </p>
-                  <p className="text-sm text-gray-600">New</p>
+                  <p className="text-sm text-gray-600">{t("pending")}</p>
                 </div>
                 <div className="bg-green-50/50 text-center p-4">
                   <p className="text-3xl font-bold text-green-600">
@@ -409,7 +426,7 @@ export default function TaskStatistics({ task_id }: TaskStatisticsProps) {
                       "InProgress"
                     ] ?? "0"}
                   </p>
-                  <p className="text-sm text-gray-600">In Progress</p>
+                  <p className="text-sm text-gray-600">{t("inProgress")}</p>
                 </div>
                 <div className="bg-orange-50/50 text-center p-4">
                   <p className="text-3xl font-bold text-orange-600">
@@ -417,7 +434,7 @@ export default function TaskStatistics({ task_id }: TaskStatisticsProps) {
                       "Completed"
                     ] ?? "0"}
                   </p>
-                  <p className="text-sm text-gray-600">Completed</p>
+                  <p className="text-sm text-gray-600">{t("completed")}</p>
                 </div>
               </div>
             </div>
@@ -425,7 +442,7 @@ export default function TaskStatistics({ task_id }: TaskStatisticsProps) {
             {/* Row 2: Gender Statistics */}
             <div className="border border-gray-100 rounded-lg p-4">
               <h2 className="text-lg font-semibold text-gray-800 mb-2 flex items-center gap-2">
-                <PersonStanding size={20} /> Gender Statistics
+                <PersonStanding size={20} /> {t("genderStatistics")}
               </h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="bg-gray-50 text-center p-4">
@@ -434,7 +451,7 @@ export default function TaskStatistics({ task_id }: TaskStatisticsProps) {
                       (g) => g.gender === "Male"
                     )?.count || "0"}
                   </p>
-                  <p className="text-sm text-gray-600">Male</p>
+                  <p className="text-sm text-gray-600">{t("male")}</p>
                 </div>
                 <div className="bg-gray-50 text-center p-4">
                   <p className="text-3xl font-bold text-pink-600">
@@ -442,7 +459,7 @@ export default function TaskStatistics({ task_id }: TaskStatisticsProps) {
                       (g) => g.gender === "Female"
                     )?.count || "0"}
                   </p>
-                  <p className="text-sm text-gray-600">Female</p>
+                  <p className="text-sm text-gray-600">{t("female")}</p>
                 </div>
               </div>
             </div>
@@ -479,11 +496,11 @@ export default function TaskStatistics({ task_id }: TaskStatisticsProps) {
                       />
                     </svg>
                     <h3 className="text-sm font-semibold text-gray-800">
-                      Micro Tasks Statistics
-                    </h3>
+                    {t("microTasksStatistics")}
+                  </h3>
                   </div>
                   <p className="text-xs text-gray-500 mb-4">
-                    Overview of contributor progress across all tasks
+                    {t("overviewContributorProgress")}
                   </p>
                   <div className="grid grid-cols-3 gap-4">
                     <div className="bg-blue-50 rounded-lg p-4 text-center">
@@ -491,7 +508,7 @@ export default function TaskStatistics({ task_id }: TaskStatisticsProps) {
                         {stats?.data?.total_micro_tasks?.ASSIGNED ?? ""}
                       </span>
                       <span className="text-sm text-gray-600 mt-1">
-                        Assigned
+                        {t("assigned")}
                       </span>
                     </div>
                     <div className="bg-green-50 rounded-lg p-4 text-center">
@@ -500,7 +517,7 @@ export default function TaskStatistics({ task_id }: TaskStatisticsProps) {
                           ""}
                       </span>
                       <span className="text-sm text-gray-600 mt-1">
-                        Partially Assigned
+                        {t("partiallyAssigned")}
                       </span>
                     </div>
                     <div className="bg-orange-50 rounded-lg p-4 text-center">
@@ -508,7 +525,7 @@ export default function TaskStatistics({ task_id }: TaskStatisticsProps) {
                         {stats?.data?.total_micro_tasks?.NOT_ASSIGNED ?? "20"}
                       </span>
                       <span className="text-sm text-gray-600 mt-1">
-                        Not Assigned
+                        {t("notAssigned")}
                       </span>
                     </div>
                   </div>
@@ -517,8 +534,8 @@ export default function TaskStatistics({ task_id }: TaskStatisticsProps) {
               {/* Right Column: Micro Tasks List */}
               <Card className="">
                 <CardHeader
-                  title="Dialect Statistics"
-                  subTitle="Distribution by dialect"
+                  title={t("dialectStatistics")}
+                  subTitle={t("distributionByDialect")}
                 />
                 <CardContent>
                   <DialectStatisticsChart

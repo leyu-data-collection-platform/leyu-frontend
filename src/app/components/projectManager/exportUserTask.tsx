@@ -26,21 +26,25 @@ const ExportUserTask: React.FC<ExportUserTaskProps> = ({
     contributors: "",
     acceptedTasks: "",
     taskName: "",
+    sourceTaskId:""
   });
 
   const { data: tasksDataAll, isLoading: isTaskLoading } = useGetProjectTaskAll(
     {
       projectId: taskData.data.project_id,
-    }
+    },
   );
 
   const addProjectUserMutation = useAddUserSingleMicroTask();
   const exportUserTaskMutation = useExportUserTask();
 
+
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
   ) => {
     const { name, value } = e.target;
+    console.log("TASK NAME ",name);
+    console.log("Value",value)
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
@@ -54,7 +58,6 @@ const ExportUserTask: React.FC<ExportUserTaskProps> = ({
           limit: parseInt(formData.contributors),
           minNumberOfAcceptedDataSets: parseInt(formData.acceptedTasks),
         });
-       
 
         // Ensure response.data exists and is an array
         const csvContent = [
@@ -107,12 +110,12 @@ const ExportUserTask: React.FC<ExportUserTaskProps> = ({
     } else {
       try {
         await addProjectUserMutation.mutateAsync({
-          sourceTaskId: taskData.data.id,
+          targetTaskId:taskData.data.id,
+          sourceTaskId: formData.sourceTaskId,
           status: formData.status,
           datasetStatus: formData.datasetStatus,
           limit: parseInt(formData.contributors),
-          minNumberOfAcceptedDataSets: parseInt(formData.acceptedTasks),
-          assignedTo: formData.taskName,
+          minNumberOfAcceptedDataSets: parseInt(formData.acceptedTasks)
         });
         toast.success("Users assigned successfully");
       } catch (error) {
@@ -120,7 +123,6 @@ const ExportUserTask: React.FC<ExportUserTaskProps> = ({
         toast.error("Failed to assign user");
       }
     }
-
 
     onClose();
   };
@@ -131,144 +133,172 @@ const ExportUserTask: React.FC<ExportUserTaskProps> = ({
       onClick={onClose}
     >
       <div
-        className="bg-white rounded-lg shadow-lg w-full sm:w-auto sm:min-w-[400px] sm:max-w-[800px] p-6 relative overflow-y-auto max-h-screen"
+        className="bg-white rounded-lg shadow-lg w-full sm:w-auto sm:min-w-[400px] sm:max-w-[800px] relative flex flex-col h-full max-h-screen"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b">
-          {(type === 'task' )?
-          <h2 className="text-lg font-semibold text-gray-800">
-        Import  to {type}
-          </h2>:
-          <h2 className="text-lg font-semibold text-gray-800">
-        Export to {type}
-          </h2>}
-       
+          {type === "task" ? (
+            <h2 className="text-lg font-semibold text-gray-800">
+              Import Contributors
+            </h2>
+          ) : (
+            <h2 className="text-lg font-semibold text-gray-800">
+              Export to {type}
+            </h2>
+          )}
+
           <button
-        onClick={onClose}
-        className="text-gray-500 hover:text-gray-700"
+            onClick={onClose}
+            className="text-gray-500 hover:text-gray-700"
           >
-        <X className="h-5 w-5" />
+            <X className="h-5 w-5" />
           </button>
         </div>
 
         {/* Form content */}
         <form
           onSubmit={handleSubmit}
-          className="p-6 space-y-4 overflow-y-auto flex-1"
+          className="p-6 space-y-5 overflow-y-auto flex-1 pb-24"
         >
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        {/* User Status */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            User Status
-          </label>
-          <select
-            name="status"
-            value={formData.status}
-            onChange={handleChange}
-            className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
-            required
-          >
-            <option value="">Select</option>
-            <option value="All">All</option>
-            <option value="Active">Active</option>
-            <option value="Pending">Pending</option>
-            <option value="Inactive">Inactive</option>
-          </select>
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Dataset Status
-          </label>
-          <select
-            name="datasetStatus"
-            value={formData.datasetStatus}
-            onChange={handleChange}
-            className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
-            required
-          >
-            <option value="">Select</option>
-            <option value="All">All</option>
-            <option value="Approved">Approved</option>
-            <option value="Rejected">Rejected</option>
-            <option value="Flagged">Flagged</option>
-          </select>
-        </div>
-
-        {/* No of Contributors */}
-          </div>
-          <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          No of Contributors
-        </label>
-        <input
-          type="number"
-          name="contributors"
-          value={formData.contributors}
-          onChange={handleChange}
-          className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
-          required
-        />
-          </div>
-          {/* Accepted Micro Tasks */}
-          <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          No of Dataset
-        </label>
-        <input
-          type="number"
-          name="acceptedTasks"
-          value={formData.acceptedTasks}
-          onChange={handleChange}
-          className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
-          required
-        />
-          </div>
-
+          {/* Task (shown first when type === "task" so it sets context) */}
           {type === "task" && (
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Task Name
-          </label>
-          <select
-            name="taskName"
-            value={formData.taskName}
-            onChange={handleChange}
-            className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
-            required
-          >
-            <option value="">Select task name</option>
-            {isTaskLoading ? (
-          <option disabled>Loading tasks...</option>
-            ) : (
-          tasksDataAll?.data.map((task) => (
-            <option key={task.id} value={task.id}>
-              {task.name}
-            </option>
-          ))
-            )}
-          </select>
-        </div>
+            <div className="space-y-1">
+              <label className="block text-sm font-semibold text-gray-800">
+                Task <span className="text-red-500">*</span>
+              </label>
+              <select
+                name="sourceTaskId"
+                value={formData.sourceTaskId}
+                onChange={handleChange}
+                className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                required
+              >
+                <option value="">Select a task</option>
+                {isTaskLoading ? (
+                  <option disabled>Loading tasks…</option>
+                ) : (
+                  tasksDataAll?.data.map((task) => (
+                    <option key={task.id} value={task.id}>
+                      {task.name}
+                    </option>
+                  ))
+                )}
+              </select>
+            </div>
           )}
+
+          {/* Membership Status */}
+          <div className="space-y-1">
+            <label className="block text-sm font-medium text-gray-700">
+              Membership Status
+              <span className="ml-1.5 text-xs font-normal text-gray-400">
+                (optional)
+              </span>
+            </label>
+            <select
+              name="status"
+              value={formData.status}
+              onChange={handleChange}
+              className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+            >
+              <option value="">All statuses</option>
+              <option value="Active">Active</option>
+              <option value="Pending">Pending</option>
+              <option value="Inactive">Inactive</option>
+            </select>
+          </div>
+
+          {/* Submission Progress — grouped visually */}
+          <div className="rounded-lg border border-gray-200 bg-gray-50 p-4 space-y-4">
+            <div>
+              <p className="text-sm font-medium text-gray-700">
+                Submission Progress
+                <span className="ml-1.5 text-xs font-normal text-gray-400">
+                  (optional)
+                </span>
+              </p>
+              <p className="text-xs text-gray-400 mt-0.5">
+                Filter contributors based on how many submissions they have
+                made.
+              </p>
+            </div>
+
+            <div className="space-y-1">
+              <label className="block text-xs font-medium text-gray-600">
+                Minimum Submissions
+              </label>
+              <input
+                type="number"
+                min={0}
+                name="acceptedTasks"
+                value={formData.acceptedTasks}
+                onChange={handleChange}
+                placeholder="e.g. 10"
+                className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
+              />
+            </div>
+
+            {type === "task" && (
+              <div className="space-y-1">
+                <label className="block text-xs font-medium text-gray-600">
+                  Submission Status
+                </label>
+                <p className="text-xs text-gray-400">
+                  Count only submissions matching this review status.
+                </p>
+                <select
+                  name="datasetStatus"
+                  value={formData.datasetStatus}
+                  onChange={handleChange}
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                >
+                  <option value="">Any status</option>
+                  <option value="Approved">Approved</option>
+                  <option value="Rejected">Rejected</option>
+                  <option value="Flagged">Flagged</option>
+                </select>
+              </div>
+            )}
+          </div>
+
+          {/* Max Contributors — required */}
+          <div className="space-y-1">
+            <label className="block text-sm font-medium text-gray-700">
+              Contributor Limit <span className="text-red-500">*</span>
+            </label>
+            <p className="text-xs text-gray-400">
+              Maximum number of contributors to import.
+            </p>
+            <input
+              type="number"
+              min={1}
+              name="contributors"
+              value={formData.contributors}
+              onChange={handleChange}
+              placeholder="e.g. 50"
+              className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+              required
+            />
+          </div>
         </form>
 
         {/* Footer - sticky bottom */}
         <div className="absolute bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 flex justify-end space-x-3">
           <Button
-        type="button"
-        onClick={onClose}
-        variant="outline"
-        className="px-4 py-2 border border-gray-300 text-gray-700 hover:bg-gray-100"
+            type="button"
+            onClick={onClose}
+            variant="outline"
+            className="px-4 py-2 border border-gray-300 text-gray-700 hover:bg-gray-100"
           >
-        Cancel
+            Cancel
           </Button>
           <Button
-        type="submit"
-        onClick={handleSubmit}
-        className="px-4 py-2 bg-[#095FAF] text-white hover:bg-blue-700"
+            type="submit"
+            onClick={handleSubmit}
+            className="px-4 py-2 bg-[#095FAF] text-white hover:bg-blue-700"
           >
-        {type === "CSV" ? "Export Contributors" : "Assign Tasks"}
+            {type === "CSV" ? "Export" : "Import"}
           </Button>
         </div>
       </div>

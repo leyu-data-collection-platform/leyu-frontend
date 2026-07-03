@@ -1,0 +1,370 @@
+﻿Key,English (en),Amharic (am),Oromo (or)
+save,Save,አስቀምጥ,Olkaayi
+cancel,Cancel,ሰርዝ,Haqu
+delete,Delete,አጥፋ,Haqi
+edit,Edit,አስተካክል,Gulaali
+add,Add,ጨምር,Dabalata
+back,Back,ተመለስ,Deebi’i
+next,Next,ቀጥል,Itti aana
+previous,Previous,ቀድሞ,Duraa
+search,Search,ፈልግ,Barbaadi
+filter,Filter,አጣራ,Calali
+apply,Apply,ተግብር,Hojiirra oolchi
+clear,Clear,አጽዳ,Qulqulleessi
+clearAllFilters,Clear all filters,ሁሉንም ማጣሪያዎች አጽዳ,Calaloota hunda qulqulleessi
+loadingMessage,Loading...,በመጫን ላይ...,በመጫን ላይ...
+error,Error,ስህተት,Dogoggora
+success,Success,ተሳክቷል,Milkaa’eera
+warning,Warning,ማስጠንቀቂያ,Akeekkachiisa
+info,Info,መረጃ,Oodeeffannoo
+view,View,እይ,Ilaali
+download,Download,አውርድ,Buusi
+upload,Upload,ጫን,Ol fe’i
+submit,Submit,አስገባ,Galchi
+close,Close,ዝጋ,Cufi
+confirm,Confirm,አረጋግጥ,Mirkaneessi
+yes,Yes,አዎ,Eeyyee
+no,No,አይ,Lakki
+ok,OK,እሺ,Tole
+help,Help and support,እርዳታ እና ድጋፍ,Gargaarsa fi deeggarsa
+logout,Log Out,ውጣ,Ba’i
+dashboard,Dashboard,ዋና ገጽ,Dashboordii
+projects,Projects,ፕሮጀክቶች,Pirojektoota
+tasks,Tasks,ተግባራት,Hojiiwwan
+settings,Settings,ቅንብሮች,Sajatoo
+profile,Profile,መገለጫ,Ibsa dhuunfaa
+home,Home,መነሻ,Mana
+userManagement,User Management,የተጠቃሚዎች አስተዳደር,Bulchiinsa tajaajilamtootaa
+projectManagement,Project Management,የፕሮጀክት አስተዳደር,Bulchiinsa pirojekti
+baseData,Base Data,መሰረታዊ መረጃ,Deetaa bu’uraa
+archive,Archive,ማህደር,Kuusaa
+systemLog,System Log,የስርዓት መዝገብ,Galmee sirnaa
+helpSupport,Help & Support,እርዳታ እና ድጋፍ,Gargaarsa fi deeggarsa
+language,Language,ቋንቋ,Afaan
+dialect,Dialect,የቋንቋ ዘይቤ,Lofee
+sector,Sector,ዘርፍ,Sektera
+organization,Organization,ድርጅት,Dhaabbata
+country,Country,ሀገር,Biyya
+region,Region,ክልል,Naannoo
+zone,Zone,ዞን,Zoonee
+rejectionType,Rejection Type,የውድቅ ዓይነት,Gosa kuffisoo
+annotationType,Annotation Type,የማብራሪያ ዓይነት,Gosa madaallii
+annotation,Annotation,ማብራሪያ,Madaallii
+flagType,Flag Type,የምልክት ዓይነት,Gosa mallattoo
+login,Login,ግባ,Seeni
+signup,Sign Up,ተመዝገብ,Galmaa’i
+emailLabel,Email,ኢሜይል,Iimeelii
+passwordLabel,Password,የይለፍ ቃል,Jecha icciitii
+confirmPasswordLabel,Confirm Password,የይለፍ ቃል አረጋግጥ,Jecha icciitii mirkaneessi
+enterYourEmail,Enter your email,ኢሜይልዎን ያስገቡ,Iimeelii keessan galchaa
+enterYourPassword,Enter your password,የይለፍ ቃልዎን ያስገቡ,Jecha icciitii keessan galchaa
+enterYourCode,Enter your code,ኮድዎን ያስገቡ,Koodii keessan galchaa
+forgotPassword,Forgot Password?,የይለፍ ቃል ረስተዋል?,Jecha icciitii dagattan?
+rememberMe,Remember me,አስታውሰኝ,Na yaadadhu
+alreadyHaveAccount,Already have an account?,አካውንት አለዎት?,Duraan akkaawuntii qabduu?
+createYourAccount,Create Your Account,አካውንት ይፍጠሩ,Akkaawuntii uumaa
+firstName,First Name,ስም,Maqaa
+middleName,Middle Name (Father Name),የአባት ስም,Maqaa Abbaa
+lastName,Last Name (Grandfather Name),የአያት ስም,Maqaa Akaakayyuu
+birthDate,Birth Date,የልደት ቀን,Guyyaa dhalootaa
+genderLabel,Gender,ጾታ,Saala
+male,Male,ወንድ,Dhiira
+female,Female,ሴት,Dubartii
+phoneNumber,Phone Number,የስልክ ቁጥር,Lakkoofsa bilbilaa
+countryLabel,Country,ሀገር,Biyya
+regionLabel,Region,ክልል,Naannoo
+zoneLabel,Zone,ዞን,Zoonee
+cityLabel,City,ከተማ,Magaalaa
+woredaLabel,Woreda,ወረዳ,Aanaa
+languageLabel,Language,ቋንቋ,Afaan
+dialectLabel,Dialect,የቋንቋ ዘይቤ,Lofee
+educationalBackground,Educational Background,የትምህርት ደረጃ,Sadarkaa barnootaa
+organizationLabel,Organization,ድርጅት,Dhaabbata
+stepOfTwo,Step {step} of 2,ደረጃ {step} ከ 2,Tarkaanfii {step} keessaa 2
+loadingFacilitatorTasks,Loading facilitator tasks...,የአመቻች ተግባራትን በመጫን ላይ...,Hojiiwwan mijeessaa fe’amaa jiru...
+loadingSettings,Loading settings...,ቅንብሮችን በመጫን ላይ...,Sajatoowwan fe’amaa jiru...
+loadingProjectDetails,Loading project details...,የፕሮጀክት ዝርዝሮችን በመጫን ላይ...,Bal’ina pirojekti fe’amaa jira...
+loadingQualityAssuranceDashboard,Loading quality assurance dashboard...,የጥራት ማረጋገጫ ገጽን በመጫን ላይ...,Dashboordii mirkaneessa qulqullinaa fe’amaa jira...
+loadingReviewerDashboard,Loading reviewer dashboard...,የገምጋሚ ገጽን በመጫን ላይ...,Dashboordii gamaggamaa fe’amaa jira...
+loadingQualityAssuranceTasks,Loading quality assurance tasks...,የጥራት ማረጋገጫ ተግባራትን በመጫን ላይ...,Hojiiwwan mirkaneessa qulqullinaa fe’amaa jiru...
+loadingReviewerTasks,Loading reviewer tasks...,የገምጋሚ ተግባራትን በመጫን ላይ...,Hojiiwwan gamaggamaa fe’amaa jiru...
+loadingTaskReviewPage,Loading task review page...,የተግባር ግምገማ ገጽን በመጫን ላይ...,Fuulli gamaggama hojii fe’amaa jira...
+taskName,Task Name,የተግባር ስም,Maqaa Hojii
+taskType,Task Type,የተግባር ዓይነት,Gosa Hojii
+createdDate,Created Date,የተፈጠረበት ቀን,Guyyaa uumame
+statusLabel,Status,ሁኔታ,Haala
+description,Description,መግለጫ,Ibsa
+selectStartDate,Select start date,የመጀመሪያ ቀን ይምረጡ,Guyyaa jalqabaa filadhu
+selectEndDate,Select end date,የማብቂያ ቀን ይምረጡ,Guyyaa xumuraa filadhu
+pageSize,Page Size,የገጽ መጠን,Hamma fuulaa
+moreOptions,More options,ተጨማሪ አማራጮች,Filannoowwan dabalataa
+reviewStatus,Review Status,የግምገማ ሁኔታ,Haala gamaggamaa
+approved,Approved,ጸድቋል,Kan ragga'e ykn Kan fudhatame
+rejected,Rejected,ውድቅ ተደርጓል,Kan kufaa ta'e
+approve,Approve,አጽድቅ,Mirkaneessi
+reject,Reject,ውድቅ አድርግ,Kuffisi
+reviewer,Reviewer,ገምጋሚ,Gamaggamaa
+score,Score,ውጤት,Qabxii
+commentLabel,Comment,አስተያየት,Yaada
+rejectionReason,Rejection Reason,ውድቅ የተደረገበት ምክንያት,Sababa kuffifameef
+annotations,Annotations,ማብራሪያዎች,Madaalliiwwan
+flag,Flag,ምልክት አድርግ,Mallattoo
+flagged,Flagged,ምልክት የተደረገበት,Kan ragga'e ykn Kan fudhatame
+filterByReviewer,Filter by Reviewer,በገምጋሚ አጣራ,Gamaggamaan calali
+selectReviewers,Select Reviewers,ገምጋሚዎችን ይምረጡ,Gamaggamtoota filadhu
+noReviewersFound,No reviewers found,ምንም ገምጋሚ አልተገኘም,Gamaggamaan hin argamne
+noReviewersFoundMatchingSearch,No reviewers found matching your search,ከፍለጋዎ ጋር የሚዛመድ ገምጋሚ አልተገኘም,Gamaggamaan barbaaddan hin argamne
+enterReviewerNameOrEmail,Enter reviewer name or email,የገምጋሚ ስም ወይም ኢሜይል ያስገቡ,Maqaa ykn iimeelii gamaggamaa galchaa
+projectName,Project Name,የፕሮጀክት ስም,Maqaa Pirojekti
+projectDescription,Project Description,የፕሮጀክት መግለጫ,Ibsa Pirojekti
+createProject,Create Project,ፕሮጀክት ፍጠር,Pirojekti uumi
+editProject,Edit Project,ፕሮጀክት አስተካክል,Pirojekti gulaali
+deleteProject,Delete Project,ፕሮጀክት አጥፋ,Pirojekti haqi
+projectDetails,Project Details,የፕሮጀክት ዝርዝሮች,Bal’ina Pirojekti
+microTask,Micro Task,ጥቃቅን ተግባር,Hojii xiqqa
+microTasks,Micro Tasks,ጥቃቅን ተግባራት,Hojiiwwan xixinnoo
+addMicroTask,Add Micro Task,ጥቃቅን ተግባር ጨምር,Hojii xiqqa dabali
+editMicroTask,Edit Micro Task,ጥቃቅን ተግባር አስተካክል,Hojii xiqqa gulaali
+deleteMicroTask,Delete Micro Task,ጥቃቅን ተግባር አጥፋ,Hojii xiqqa haqi
+user,User,ተጠቃሚ,Tajaajilamaa
+users,Users,ተጠቃሚዎች,Tajaajilamtoota
+member,Member,አባል,Miseensa
+members,Members,አባላት,Miseensota
+addMember,Add Member,አባል ጨምር,Miseensa dabali
+removeMember,Remove Member,አባል አስወግድ,Miseensa balleessi
+roleLabel,Role,ድርሻ,Gahee
+roles,Roles,ድርሻዎች,Gahee
+facilitator,Facilitator,አመቻች,Mijeessaa
+projectManager,Project Manager,የፕሮጀክት ስራ አስኪያጅ,Hoogganaa Pirojekti
+qualityAssurance,Quality Assurance,የጥራት ማረጋገጫ,Mirkaneessa Qulqullinaa
+contributor,Contributor,አበርካች,Hirmaataa
+superAdmin,Super Admin,ዋና አስተዳዳሪ,Bulchaa Ol’aanaa
+statistics,Statistics,ስታቲስቲክስ,Istaatistiksii
+total,Total,ጠቅላላ,Waliigala
+completed,Completed,የተጠናቀቀ,Xumurame
+pending,Pending,በጥበቃ ላይ,Kan eegamaa jiru
+inProgress,In Progress,በሂደት ላይ,Adeemsarra
+failed,Failed,አልተሳካም,Kufeera
+count,Count,ብዛት,Baay’ina
+percentage,Percentage,መቶኛ,Dhibbeentaa
+required,Required,ግዴታ,Dirqama
+optional,Optional,አማራጭ,Filannoo
+selectOption,Select an option,አማራጭ ይምረጡ,Filannoo filadhu
+selectCountry,Select Country,ሀገር ይምረጡ,Biyya filadhu
+selectRegion,Select Region,ክልል ይምረጡ,Naannoo filadhu
+selectZone,Select Zone,ዞን ይምረጡ,Zoonee filadhu
+selectLanguageOption,Select Language,ቋንቋ ይምረጡ,Afaan filadhu
+selectDialect,Select Dialect,የቋንቋ ዘይቤ ይምረጡ,Lofee filadhu
+selectGender,Select Gender,ጾታ ይምረጡ,Saala filadhu
+noDataAvailable,No data available,ምንም መረጃ የለም,Deetaan hin jiru
+successMessage,Operation completed successfully,ክዋኔው በተሳካ ሁኔታ ተጠናቋል,Hojiin milkaa’inaan xumurameera
+errorMessage,An error occurred,ስህተት ተከስቷል,Dogoggorri uumameera
+confirmDelete,Are you sure you want to delete this?,ይህንን ማጥፋት እንደሚፈልጉ እርግጠኛ ነዎት?,Kana haquu akka barbaaddan mirkaneeffattanii?
+confirmAction,Are you sure you want to proceed?,ለመቀጠል እርግጠኛ ነዎት?,Itti fufuuf mirkaneeffattanii?
+invalidEmail,Please enter a valid email address,እባክዎ ትክክለኛ ኢሜይል ያስገቡ,Iimeelii sirrii galchaa
+passwordMismatch,Passwords do not match,የይለፍ ቃሉ አይዛመድም,Jechi icciitii wal hin fudhatu
+passwordRequirements,"Password must be at least 8 characters long and include an uppercase letter, lowercase letter, number, and special character (!@#$%^&*)",የይለፍ ቃል ቢያንስ 8 ፊደላት ሆኖ አቢይ ሆሄያት፣ ንዑስ ሆሄያት፣ ቁጥር እና ልዩ ምልክቶችን የያዘ መሆን አለበት,"Jechi icciitii yoo xiqqaate dheerina 8 qabaachuu fi qubee gurguddaa, xixinnoo, lakkoofsa fi mallattoolee addaa qabaachuu qaba"
+fieldRequired,This field is required,ይህ ቦታ መሞላት አለበት,Bakki kun dirqama
+englishLang,English,እንግሊዝኛ,Ingiliffa
+amharicLang,Amharic,አማርኛ,Amhariffa
+oromoLang,Oromo,ኦሮምኛ,Afaan Oromoo
+showing,Showing,በማሳየት ላይ,Mul’isaa jira
+of,of,ከ,keessaa
+results,results,ውጤቶች,bu’aawwan
+page,Page,ገጽ,Fuula
+firstPage,First Page,የመጀመሪያ ገጽ,Fuula jalqabaa
+lastPage,Last Page,የመጨረሻ ገጽ,Fuula xumuraa
+confirmationDialog,Confirmation,ማረጋገጫ,Mirkaneessa
+alertDialog,Alert,ማስጠንቀቂያ,Akeekkachiisa
+notificationDialog,Notification,ማሳወቂያ,Beeksisa
+noResults,No results found,ምንም ውጤት አልተገኘም,Bu’aan hin argamne
+pleaseWait,Please wait...,እባክዎ ይጠብቁ...,Maaloo obsi...
+tryAgain,Try Again,እንደገና ይሞክሩ,Irra deebi’ii yaali
+goBack,Go Back,ተመለስ,Gara duubaa
+notFound,Not Found,አልተገኘም,Hin argamne
+unauthorized,Unauthorized,ፈቃድ የለዎትም,Hayyama hin qabdu
+forbidden,Forbidden,የተከለከለ,Dhowwamaa
+serverError,Server Error,የሰርቨር ስህተት,Dogoggora sarvarii
+networkError,Network Error,የኔትወርክ ስህተት,Dogoggora neetworkii
+myProfile,My Profile,የእኔ መገለጫ,Ibsa kiyya
+security,Security,ደህንነት,Nageenyaa
+accountInformation,Account Information,የአካውንት መረጃ,Odeeffannoo akkaawuntii
+addressInformation,Address Information,የአድራሻ መረጃ,Odeeffannoo teessoo
+changeImage,Change Image,ምስል ቀይር,Fakkii jijjiiri
+previewImage,Preview Image,ምስል ቅድመ-ዕይታ,Fakkii durduubee ilaali
+updateChanges,Update Changes,ለውጦችን አዘምን,Jijjiirama haaromsi
+changePassword,Change Password,የይለፍ ቃል ቀይር,Jecha icciitii jijjiiri
+currentPassword,Current Password,አሁን ያለ የይለፍ ቃል,Jecha icciitii ammaa
+newPassword,New Password,አዲስ የይለፍ ቃል,Jecha icciitii haaraa
+subCity,Sub City,ክፍለ ከተማ,Magaalaa xiqqaa
+accountSetting,Account Setting,የአካውንት ቅንብር,Sajatoo akkaawuntii
+collapseSubmenu,Collapse submenu,ንዑስ ምናሌ ሰብስብ,Sarara xiqqaa cufi
+expandSubmenu,Expand submenu,ንዑስ ምናሌ ዘርጋ,Sarara xiqqaa bani
+fullName,Full Name,ሙሉ ስም,Maqaa guutuu
+email,Email,ኢሜይል,Iimeelii
+roleHeader,Role,ድርሻ,Gahee
+statusHeader,Status,ሁኔታ,Haala
+createdDateHeader,Created Date,የተፈጠረበት ቀን,Guyyaa uumame
+referralCode,Referral Code,የሪፈራል ኮድ,Koodii wabii
+actionHeader,Action,ተግባር,Hojii
+idHeader,ID,መለያ,Eenyummaa
+textHeader,Text,ጽሑፍ,Barreeffama
+audioHeader,Audio,ድምጽ,Sagalee
+imageHeader,Image,ምስል,Fakkii
+submissionHeader,Submission,ማስገቢያ,Galchaa
+actionsHeader,Actions,ተግባራት,Hojiiwwan
+codeHeader,Code,ኮድ,Koodii
+qaReviewHeader,QA Review,የጥራት ግምገማ,Gamaggama QA
+finalReviewHeader,Final Review,የመጨረሻ ግምገማ,Gamaggama xumuraa
+submissionsHeader,Submissions,ማስገቢያዎች,Galchaawwan
+yourReviewHeader,Your Review,የእርስዎ ግምገማ,Gamaggama keessan
+microTaskCodeHeader,MicroTask Code,የጥቃቅን ተግባር ኮድ,Koodii hojii xiqqa
+active,Active,ንቁ,Hojjataa
+inactive,Inactive,ንቁ ያልሆነ,Hojjataa miti
+deactivated,Deactivated,ተሰናክሏል,Dhaabatee jira
+viewSubmissions,View Submissions,ማስገቢያዎችን እይ,Galchaawwan ilaali
+openTask,Open Task,ተግባር ክፈት,Hojii bani
+newUser,New User,አዲስ ተጠቃሚ,Tajaajilamaa haaraa
+addNewUser,Add New User,አዲስ ተጠቃሚ ጨምር,Tajaajilamaa haaraa dabali
+createUser,Create User,ተጠቃሚ ፍጠር,Tajaajilamaa uumi
+creating,Creating...,በመፍጠር ላይ...,Uumamaa jira...
+updateUser,Update User,ተጠቃሚ አዘምን,Tajaajilamaa haaromsi
+taskConfiguration,Task Configuration,የተግባር ቅንብር,Sajatoo hojii
+taskNameLabel,Name,ስም,Maqaa
+enterTaskName,Enter task name,የተግባር ስም ያስገቡ,Maqaa hojii galchaa
+enterDescription,Enter description,መግለጫ ያስገቡ,Ibsa galchaa
+enterNumber,Enter number,ቁጥር ያስገቡ,Lakkoofsa galchaa
+selectTaskType,Select task type,የተግባር ዓይነት ይምረጡ,Gosa hojii filadhu
+requireContributorTest,Require contributor test,የአበርካች ፈተና ያስፈልጋል,Qormaata hirmaataa barbaachisa
+seeMore,See more,ተጨማሪ እይ,Dabalata ilaali
+showLess,Show less,ያነሰ አሳይ,Xiqqeessi
+overview,Overview,አጠቃላይ እይታ,Cuunfaa
+usersTab,Users,ተጠቃሚዎች,Tajaajilamtoota
+archiveTab,Archive,ማህደር,Kuusaa
+searchProject,Search Project...,ፕሮጀክት ፈልግ...,Pirojekti barbaadi...
+noText,No text,ጽሑፍ የለም,Barreeffama hin jiru
+noAudio,No audio,ድምጽ የለም,Sagalee hin jiru
+noImage,No image,ምስል የለም,Fakkii hin jiru
+rejectMicroTask,Reject MicroTask,ጥቃቅን ተግባር ውድቅ አድርግ,Hojii xiqqa kuffisi
+approveMicroTask,Approve MicroTask,ጥቃቅን ተግባር አጽድቅ,Hojii xiqqa mirkaneessi
+flagMicroTask,Flag MicroTask,ጥቃቅን ተግባር ምልክት አድርግ,Hojii xiqqa mallatteessi
+imagePreview,Image Preview,ምስል ቅድመ-ዕይታ,Fakkii durduubee ilaali
+selectAnnotation,Select an annotation,ማብራሪያ ይምረጡ,Madaallii filadhu
+dateOfBirth,Date of Birth,የልደት ቀን,Guyyaa dhalootaa
+selectRole,Select Role,ድርሻ ይምረጡ,Gahee filadhu
+allRoles,All Roles,ሁሉም ድርሻዎች,Gaheelee hunda
+strongPassword,Strong password,ጠንካራ የይለፍ ቃል,Jecha icciitii cimaa
+complete,Complete,ተጠናቋል,Xumurame
+microtaskUnit,Microtask,ጥቃቅን ተግባር,Hojii xiqqa
+basicInformation,Basic Information,መሰረታዊ መረጃ,Odeeffannoo bu'uraa
+noDescriptionAvailable,No description available.,መግለጫ የለም።,Ibsi hin jiru.
+contributorTest,Contributor Test,የአበርካች ፈተና,Qormaata hirmaataa
+addInstruction,Add Instruction,መመሪያ ጨምር,Qajeelfama dabali
+naValue,N/A,አይፈጸምም,Hin jiru
+mustBeGreaterThanZero,Must be greater than 0,ከ0 በላይ መሆን አለበት,0 caaluu qaba
+atLeastOneDialect,At least one dialect is required,ቢያንስ አንድ ዘይቤ ያስፈልጋል,Yoo xiqqaate lofee tokko barbaachisa
+atLeastOneSector,At least one sector is required,ቢያንስ አንድ ዘርፍ ያስፈልጋል,Yoo xiqqaate sektera tokko barbaachisa
+atLeastOneLocation,At least one location is required,ቢያንስ አንድ ቦታ ያስፈልጋል,Yoo xiqqaate bakka tokko barbaachisa
+selectGenderDistribution,Please select a gender distribution,እባክዎ የጾታ ስርጭት ይምረጡ,Maaloo raabsa saala filadhu
+agesMustBePositive,Both min and max age must be greater than 0,ዝቅተኛ እና ከፍተኛ ዕድሜ ከ0 በላይ መሆን አለበት,Umrii xiqqaa fi guddaan 0 caaluu qabu
+minAgeLessThanMax,Minimum age must be less than maximum age,ዝቅተኛ ዕድሜ ከፍተኛ ዕድሜ ያነሰ መሆን አለበት,Umrii xiqqaan umrii guddaa caaluu hin qabu
+failedToCreateUser,Failed to create user,ተጠቃሚ መፍጠር አልተሳካም,Tajaajilamaa uumuun kufee jira
+yourWalletBalance,Your Wallet Balance,ያልዎት ቀሪ ሂሳብ,Hambaa herregaa kee
+withdraw,Withdraw,የወጪ ታሪክ,Baasi
+seeAllTransactions,See All Transactions,ሁሉንም ግብይቶች ይመልከቱ,Hojmaata hunda ilaali
+taskNameHeader,Task Name,የተግባር ስም,Maqaa Hojii
+projectNameHeader,Project Name,የፕሮጀክት ስም,Maqaa Pirojekti
+dateHeader,Date,ቀን,Guyyaa
+typeHeader,Type,ዓይነት,Gosa
+testHeader,Test,ፈተና,Qormaata
+microTaskHeader,Micro Task,ጥቃቅን ተግባር,Hojii xiqqa
+dataHeader,Data,መረጃ,Deetaa
+contributorHeader,Contributor,አበርካች,Hirmaataa
+submissionInformation,Submission Information,የማስገቢያ መረጃ,Odeeffannoo galchaa
+microTaskInformation,Micro task Information,የጥቃቅን ተግባር መረጃ,Odeeffannoo hojii xiqqa
+submittedBy,Submitted by,ያስገባው,Kan galche
+rejectionReasonsList,Rejection Reasons:,የውድቅ ምክንያቶች:,Sababoota kuffisoo:
+rejectionCommentsList,Rejection Comments:,የውድቅ አስተያየቶች:,Yaadota kuffisoo:
+unnamedReason,Unnamed reason,ስም የሌለው ምክንያት,Sababa maqaa hin qabne
+rejectionReasonLabel,Rejection Reason,የውድቅ ምክንያት,Sababa kuffisoo
+selectAReason,Select a reason,ምክንያት ይምረጡ,Sababa filadhu
+commentOptional,Comment (Optional),አስተያየት (አማራጭ),Yaada (Filannoo)
+enterAdditionalComments,Enter any additional comments,ተጨማሪ አስተያየቶችን ያስገቡ,Yaada dabalataa galchaa
+submitRejection,Submit Rejection,ውድቅ አስገባ,Kuffisoo galchi
+nameLabel,Name,ስም,Maqaa
+userRoleLabel,User Role,የተጠቃሚ ድርሻ,Gahee tajaajilamaa
+all,All,ሁሉም,Hunda
+userInformation,User Information,የተጠቃሚ መረጃ,Odeeffannoo tajaajilamaa
+generalInformation,General Information,አጠቃላይ መረጃ,Odeeffannoo waliigalaa
+taskDistribution,Task distribution,የተግባር ስርጭት,Raabsa hojii
+submitRejectionBtn,Submit Rejection,ውድቅ አስገባ,Kuffisoo galchi
+submitApprovalBtn,Submit Approval,ፍቃድ አስገባ,Hayyama galchi
+submitFlag,Submit Flag,ምልክት አስገባ,Mallattoo galchi
+rejectionReasonsLabel,Rejection Reasons,የውድቅ ምክንያቶች,Sababoota kuffisoo
+noRejectionReasons,No rejection reasons available,ምንም የውድቅ ምክንያቶች የሉም,Sababoota kuffisoo hin jiran
+flagTypeLabel,Flag Type,የምልክት ዓይነት,Gosa mallattoo
+selectFlagHint,"Select ""Flag"" to mark the item as flagged","""ምልክት"" ን ይምረጡ ንጥሉን ምልክት ለማድረግ","""Mallattoo"" filadhu"
+questionLabel,Question,ጥያቄ,Gaaffii
+answerLabel,Answer,መልስ,Deebii
+microTasksBreadcrumb,Micro tasks,ጥቃቅን ተግባራት,Hojiiwwan xixinnoo
+typeLabel,Type:,ዓይነት:,Gosa:
+pendingMicroTasks,Pending micro tasks,በጥበቃ ላይ ያሉ ጥቃቅን ተግባራት,Hojiiwwan xixinnoo Kan eegamaa jiru
+completedMicroTasks,Completed micro tasks,የተጠናቀቁ ጥቃቅን ተግባራት,Hojiiwwan xixinnoo xumurame
+rejectedDatasets,Rejected datasets,ውድቅ የተደረጉ ዳታ ስብስቦች,Kuusaalee deetaa kuffifame
+underReviewDatasets,Under review datasets,በግምገማ ላይ ያሉ ዳታ ስብስቦች,Kuusaalee deetaa gamaggamarra jiran
+totalSubmittedHrs,Total submitted hrs,ጠቅላላ የቀረቡ ሰዓቶች,Sa'aatii waliigala galame
+totalExpiredMicroTasks,Total expired micro tasks,ጠቅላላ ጊዜ ያለፈባቸው ጥቃቅን ተግባራት,Hojiiwwan xixinnoo yeroo darbee waliigala
+publicAccess,Public Access,ይፋዊ ተደራሽነት,Argamummaa hawaasaa
+ageRange,Age Range,የዕድሜ ክልል,Daangaa umrii
+dialectSpecific,Dialect Specific,ዘይቤ ተኮር,Lofee addaa
+dialects,Dialect(s),ዘይቤ(ዎች),Lofee(wwan)
+demographicsTargeting,Demographics & Targeting,ስነ-ህዝብ እና ዒላማ,Uummata fi kaayyoo
+locationSectors,Location & Sectors,ቦታ እና ዘርፎች,Bakka fi sekteroota
+locationSpecific,Location Specific,ቦታ ተኮር,Bakka addaa
+locations,Location(s),ቦታ(ዎች),Bakka(wwan)
+sectorSpecific,Sector Specific,ዘርፍ ተኮር,Sektera addaa
+sectors,Sector(s),ዘርፍ(ዎች),Sektera(wwan)
+payment,Payment,የስራዎ ገቢ,Kafaltii
+contributorCreditPerMicrotask,Contributor credit per microtask,የአበርካች ክሬዲት በጥቃቅን ተግባር,Liqii hirmaataa hojii xiqqa tokkoof
+reviewerCreditPerMicrotask,Reviewer credit per microtask,የገምጋሚ ክሬዲት በጥቃቅን ተግባር,Liqii gamaggamaa hojii xiqqa tokkoof
+maximumAudioLength,Maximum audio length,ከፍተኛ የድምጽ ርዝመት,Dheerina sagalee guddaa
+maximumCharactersLength,Maximum characters length,ከፍተኛ ፊደል ብዛት,Lakkoofsa qubee guddaa
+minAudioLength,Minimum audio length,ዝቅተኛው የድምጽ ርዝመት,Dheerina sagalee xiqqaataa
+noInstructionsAdded,No instructions added.,ምንም መመሪያ አልተካተተም,Qajeelfamni dabalame hin jiru
+taskInstruction,Task Instruction,የተግባር መመሪያ,Qajeelfama Hojii
+noInstructions,No instructions added.,ምንም መመሪያ አልተካተተም።,Qajeelfamni dabalame hin jiru.
+batchSize,Batch size,የባች መጠን,Hamma Baachii
+maxReviewerPerDataset,Maximum reviewer per dataset,ለአንድ የውሂብ ስብስብ ከፍተኛው የገምጋሚዎች ብዛት,Seta deetaa tokkoof baay’ina madaaltotaa ol’aanaa
+approxTimePerBatch,Approximate time per batch in min,ለአንድ ባች የሚፈጅ ግምታዊ ጊዜ በደቂቃ,Baachii tokkoof tilmaama yeroo daqiiqaan
+maxContributorAssignment,Maximum contributors assignment per facilitator,ለአንድ አስተባባሪ የሚመደቡ ከፍተኛው የረዳቶች ብዛት,Gargaaraa tokkoof ramaddii hojjettootaa ol’aanaa
+minCharLength,Minimum characters length,ዝቅተኛው የፊደላት ርዝመት,Dheerina qubelee xiqqaataa
+reviewerCompletionTime,Reviewer Completion time in Days,የገምጋሚ ማጠናቀቂያ ጊዜ በሰዓት,Yeroo xumura madaaltotaa sa’aatiin
+contributorCompletionTime,Contributors Completion Time,የረዳቶች ማጠናቀቂያ ጊዜ,Yeroo xumura hojjettootaa
+maxSubmissionPerMicrotask,Maximum submission per microtask,ለአንድ ጥቃቅን ተግባር ከፍተኛው የማስረከቢያ ብዛት,Hojii xiqqaatti baay’ina dhiyeessii ol’aanaa
+maxAssignmentPerContributor,Maximum assignment per contributor,ለአንድ ረዳት የሚሰጥ ከፍተኛው የሥራ ድርሻ,Hojjetaa tokkoof ramaddii hojii ol’aanaa
+maxDatasetPerReviewer,Max dataset per reviewer,ለአንድ ገምጋሚ ከፍተኛው የውሂብ ስብስብ,Madaalaa tokkoof seta deetaa ol’aanaa
+maxRetryPerMicroTask,Maximum Retry per micro Task,ለአንድ ጥቃቅን ተግባር ከፍተኛው የመድገም ሙከራ,Hojii xiqqaatti irራ deebii yaalii ol’aanaa
+videoTutorials,Video tutorials and guides will be available here soon.,የቪዲዮ አጋዥ ስልጠናዎች እና መመሪያዎች በቅርቡ እዚህ ይገኛሉ።,Viidiyoowwan leenjii fi qajeelfamoonni dhiyeenyatti asitti ni argamu.
+code,Code,ኮድ,Koodii
+status,Status,ሁኔታ,Haala
+microTaskCode,MicroTask Code,የጥቃቅን ተግባር ኮድ,Koodii Hojii Xiqqaatotaa
+type,Type,ዓይነት,Akaakuu
+microTaskText,MicroTask Text,የጥቃቅን ተግባር ጽሑፍ,Barreeffama Hojii Xiqqaatotaa
+audioFile,Audio File,የድምጽ ፋይል,Faayila Sagalee
+audioNotSupported,Your browser does not support the audio element.,የእርስዎ ብሮውዘር የድምጽ ማጫወቻውን አይደግፍም።,Biraawuzariin keessan elementii sagalee kana hin deeggaru.
+responseData,Response Data,የምላሽ መረጃ,Deetaa Deebii
+textResponse,Text Response,የጽሑፍ ምላሽ,Deebii Barreeffamaa
+audioResponse,Audio Response,የድምጽ ምላሽ,Deebii Sagalee
+responseType,Response Type,የምላሽ ዓይነት,Akaakuu Deebii
+transactionId,Transaction ID,የግብይት መለያ,Eenyummaa hojmaataa
+updatedDate,Updated Date,የተዘመነበት ቀን,Guyyaa haaromfame
+transactionHistory,Transaction History,የግብይት ታሪክ,Seenaa hojmaataa
+credit,Credit,ክሬዲት,Liqii
+withdrawFunds,Withdraw Funds,ገንዘብ የወጪ ታሪክ,Maallaqa baasi
+paymentMethod,Payment Method,የየስራዎ ገቢ ዘዴ,Mala kafaltii
+selectPaymentMethod,Select payment method,የየስራዎ ገቢ ዘዴ ይምረጡ,Mala kafaltii filadhu
+amountEtb,Amount (ETB),መጠን (ብር),Baay'ina (ETB)
+availableBalance,Available balance,ያለ ቀሪ ሂሳብ,Balansi jiru
+audioDataSet,Audio DataSet,የድምጽ ዳታ ስብስብ,Kuusaa Raggaa Sagalee
+textDataSet,Text DataSet,የጽሑፍ ዳታ ስብስብ,Kuusaa Raggaa Barreeffamaa
+totalDataSet,Total DataSet,ጠቅላላ ዳታ ስብስብ,Kuusaa Raggaa Waliigalaa

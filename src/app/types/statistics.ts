@@ -23,6 +23,14 @@ export interface StatisticsProject {
 
 }
 
+export interface StatisticsTask {
+    "total_data_sets": number,
+    "total_micro_tasks": number,
+    "total_contributors": number,
+    "total_facilitators": number,
+    "total_reviewers": number,
+}
+
 export interface StatisticsProjectContributer {
     "pending_micro_tasks": number,
     "completed_micro_tasks": number,

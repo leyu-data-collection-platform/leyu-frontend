@@ -2,6 +2,18 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { toast } from "sonner";
+import CryptoJS from "crypto-js";
+
+function computePayloadSignature(body: Record<string, any>, secret: string): string {
+    const sortedKeys = Object.keys(body).sort();
+    const sortedBody = sortedKeys.reduce((acc, key) => {
+        acc[key] = body[key];
+        return acc;
+    }, {} as Record<string, any>);
+    const canonicalJson = JSON.stringify(sortedBody);
+    const signature = CryptoJS.HmacSHA256(canonicalJson, secret);
+    return signature.toString(CryptoJS.enc.Hex);
+}
 
 
 import { PaginationResponse, SinglerResponse, AllResponse } from "@/app/types/global"
@@ -39,12 +51,9 @@ interface transaction {
     updated_date: string
 }
 interface WithdrawMoney {
-    paymentMethod: string
-    phoneNumber: string
-    amount: string
+    amount: number
     bank_code: string
     account_number: string
-
 }
 interface ScoreUpdate {
     scoreValue: number
@@ -197,7 +206,14 @@ export const useWithdrawMoney = () => {
                 `${process.env.NEXT_PUBLIC_API_BASE_URL}/wallet/withdraw-money`,
                 taskData,
                 {
-                    headers: { Authorization: `Bearer ${session.access_token}` },
+                    headers: {
+                        Authorization: `Bearer ${session.access_token}`,
+                        "x-idempotency-key": crypto.randomUUID(),
+                        "x-payload-signature": computePayloadSignature(
+                            taskData as unknown as Record<string, any>,
+                            process.env.NEXT_PUBLIC_PAYLOAD_SIGNATURE_SECRET ?? ""
+                        ),
+                    },
                 }
             );
             return response.data;

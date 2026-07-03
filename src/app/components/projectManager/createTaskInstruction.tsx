@@ -70,7 +70,7 @@ const CreateTaskInstruction: React.FC<CreateTaskInstructionProps> = ({
           content: formData.content,
           video_instruction_url: formData.video_instruction_url,
           audio_instruction_url: formData.audio_instruction_url,
-          taskId: taskId,
+          taskId: taskId
         });
         onCancel();
       } catch (error) {}
@@ -81,7 +81,7 @@ const CreateTaskInstruction: React.FC<CreateTaskInstructionProps> = ({
           content: formData.content,
           video_instruction_url: formData.video_instruction_url,
           audio_instruction_url: formData.audio_instruction_url,
-          taskId: taskId,
+          taskId: taskId
         });
         onCancel();
       } catch (error) {}

@@ -68,10 +68,8 @@ interface LandingProps {
 }
 
 interface WithdrawMoney {
-  paymentMethod: string;
-  phoneNumber: string;
-  amount: string;
   bank_code: string;
+  amount: string;
   account_number: string;
 }
 
@@ -79,10 +77,9 @@ const Landing: React.FC<LandingProps> = ({ usertype }) => {
   const [sorting, setSorting] = useState<SortingState>([]);
   const { t } = useTranslation();
   const [isWithdrawModalOpen, setIsWithdrawModalOpen] = useState(false);
-  const { data: withdrawOptionsData, isLoading: withdrawOptionsLoading } = useWithdrawOptions();
+  const { data: withdrawOptionsData, isLoading: withdrawOptionsLoading } =
+    useWithdrawOptions();
   const [withdrawFormData, setWithdrawFormData] = useState<WithdrawMoney>({
-    paymentMethod: "",
-    phoneNumber: "",
     amount: "",
     bank_code: "",
     account_number: "",
@@ -198,8 +195,6 @@ const Landing: React.FC<LandingProps> = ({ usertype }) => {
 
   const handleWithdrawModalOpen = () => {
     setWithdrawFormData({
-      paymentMethod: "",
-      phoneNumber: "",
       amount: "",
       bank_code: "",
       account_number: "",
@@ -225,17 +220,11 @@ const Landing: React.FC<LandingProps> = ({ usertype }) => {
     const errors: Partial<WithdrawMoney> = {};
     const balance = parseFloat(mybalance?.data || "0");
     const amount = parseFloat(withdrawFormData.amount || "0");
-
-    if (!withdrawFormData.paymentMethod) {
-      errors.paymentMethod = "Payment method is required";
+    console;
+    if (!withdrawFormData.account_number) {
+      errors.account_number = "Account number is required";
     }
-    if (!withdrawFormData.phoneNumber) {
-      errors.phoneNumber = "Phone number is required";
-    } else if (!/^\+?251\d{9}$/.test(withdrawFormData.phoneNumber)) {
-      errors.phoneNumber =
-        "Phone number must be a valid Ethiopian number (e.g., +251912345678)";
-    }
-    if (!withdrawFormData.amount || isNaN(amount) || amount <= 0) {
+    if (!withdrawFormData.amount || Number(amount) <= 0) {
       errors.amount = "Amount must be greater than 0";
     } else if (amount > balance) {
       errors.amount = `Amount cannot exceed available balance of ${balance} Birr`;
@@ -246,9 +235,12 @@ const Landing: React.FC<LandingProps> = ({ usertype }) => {
   };
 
   const handleWithdrawSubmit = () => {
-    
     if (validateWithdrawForm()) {
-      withdrawMutation.mutate(withdrawFormData, {
+      const payload = {
+        ...withdrawFormData,
+        amount: parseFloat(withdrawFormData.amount),
+      };
+      withdrawMutation.mutate(payload as any, {
         onSuccess: () => {
           handleWithdrawModalClose();
 
@@ -265,133 +257,135 @@ const Landing: React.FC<LandingProps> = ({ usertype }) => {
     <div className="bg-white  p-6">
       {/* --- HEADER SECTION --- */}
       <div className="flex flex-col lg:flex-row items-center lg:items-start justify-between mb-6  border-gray-100 pb-4 gap-6">
-        {/* Wallet Balance Card */}
-        <div className="relative w-full lg:w-96 h-40 rounded-md overflow-hidden">
-          <svg
-            width="516"
-            height="180"
-            viewBox="0 0 516 180"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <rect
-              width="575.83"
+        {/* Wallet Balance Card — hidden for reviewer */}
+        {usertype !== "reviewer" && (
+          <div className="relative w-full lg:w-96 h-40 rounded-md overflow-hidden">
+            <svg
+              width="516"
               height="180"
-              rx=""
-              fill="url(#paint0_linear_422_6974)"
-            />
-            <defs>
-              <linearGradient
-                id="paint0_linear_422_6974"
-                x1="-255.895"
-                y1="-4.34849e-06"
-                x2="960.443"
-                y2="207.197"
-                gradientUnits="userSpaceOnUse"
-              >
-                <stop stopColor="#095FAF" />
-                <stop stopColor="#086CA8" />
-                <stop offset="0.275781" stopColor="#086CA8" />
-                <stop
-                  offset="0.484108"
-                  stopColor="#0779A2"
-                  stopOpacity="0.93"
-                />
-                <stop
-                  offset="0.657743"
-                  stopColor="#068B99"
-                  stopOpacity="0.82"
-                />
-                <stop offset="1" stopColor="#02C27D82" stopOpacity="0.51" />
-              </linearGradient>
-            </defs>
-          </svg>
-          <div className="absolute inset-0 flex flex-col justify-center px-6">
-            <div className="flex flex-row w-full">
-              <span className="justify-start text-sm text-white opacity-80">
-                {t("yourWalletBalance")}
+              viewBox="0 0 516 180"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <rect
+                width="575.83"
+                height="180"
+                rx=""
+                fill="url(#paint0_linear_422_6974)"
+              />
+              <defs>
+                <linearGradient
+                  id="paint0_linear_422_6974"
+                  x1="-255.895"
+                  y1="-4.34849e-06"
+                  x2="960.443"
+                  y2="207.197"
+                  gradientUnits="userSpaceOnUse"
+                >
+                  <stop stopColor="#095FAF" />
+                  <stop stopColor="#086CA8" />
+                  <stop offset="0.275781" stopColor="#086CA8" />
+                  <stop
+                    offset="0.484108"
+                    stopColor="#0779A2"
+                    stopOpacity="0.93"
+                  />
+                  <stop
+                    offset="0.657743"
+                    stopColor="#068B99"
+                    stopOpacity="0.82"
+                  />
+                  <stop offset="1" stopColor="#02C27D82" stopOpacity="0.51" />
+                </linearGradient>
+              </defs>
+            </svg>
+            <div className="absolute inset-0 flex flex-col justify-center px-6">
+              <div className="flex flex-row w-full">
+                <span className="justify-start text-sm text-white opacity-80">
+                  {t("yourWalletBalance")}
+                </span>
+                <div className="flex justify-end ml-auto">
+                  <svg
+                    width="30"
+                    height="29"
+                    viewBox="0 0 30 29"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M20 16.7915C20 17.7407 20.8395 18.5103 21.875 18.5103C22.9105 18.5103 23.75 17.7407 23.75 16.7915C23.75 15.8423 22.9105 15.0728 21.875 15.0728C20.8395 15.0728 20 15.8423 20 16.7915Z"
+                      stroke="white"
+                      strokeWidth="1.5"
+                    />
+                    <path
+                      d="M23.625 9.9165C23.707 9.54627 23.75 9.16308 23.75 8.77067C23.75 5.60654 20.9517 3.0415 17.5 3.0415C14.0483 3.0415 11.25 5.60654 11.25 8.77067C11.25 9.16308 11.293 9.54627 11.375 9.9165"
+                      stroke="white"
+                      strokeWidth="1.5"
+                    />
+                    <path
+                      d="M8.75 9.90908H20C23.5355 9.90908 25.3032 9.90908 26.4016 10.9164C27.5 11.9237 27.5 13.5449 27.5 16.7874V19.0802C27.5 22.3227 27.5 23.9439 26.4016 24.9512C25.3032 25.9585 23.5355 25.9585 20 25.9585H12.5C7.78595 25.9585 5.42894 25.9585 3.96446 24.6155C2.5 23.2723 2.5 21.1107 2.5 16.7874V14.4947C2.5 10.1713 2.5 8.00968 3.96446 6.6666C5.14333 5.58547 6.90054 5.37462 10 5.3335H12.5"
+                      stroke="white"
+                      strokeWidth="1.5"
+                      strokeLinecap="round"
+                    />
+                  </svg>
+                </div>
+              </div>
+              <span className="text-2xl font-bold text-white mt-1">
+                {mybalance?.data ? `ETB ${mybalance.data}` : "ETB 0"}
               </span>
-              <div className="flex justify-end ml-auto">
+              <div>
                 <svg
-                  width="30"
-                  height="29"
-                  viewBox="0 0 30 29"
+                  width="462"
+                  height="2"
+                  viewBox="0 0 462 2"
                   fill="none"
                   xmlns="http://www.w3.org/2000/svg"
                 >
-                  <path
-                    d="M20 16.7915C20 17.7407 20.8395 18.5103 21.875 18.5103C22.9105 18.5103 23.75 17.7407 23.75 16.7915C23.75 15.8423 22.9105 15.0728 21.875 15.0728C20.8395 15.0728 20 15.8423 20 16.7915Z"
+                  <line
+                    y1="-0.5"
+                    x2="461.032"
+                    y2="-0.5"
+                    transform="matrix(0.999999 -0.00102619 0.00102518 1 0.395386 1.88477)"
                     stroke="white"
-                    strokeWidth="1.5"
-                  />
-                  <path
-                    d="M23.625 9.9165C23.707 9.54627 23.75 9.16308 23.75 8.77067C23.75 5.60654 20.9517 3.0415 17.5 3.0415C14.0483 3.0415 11.25 5.60654 11.25 8.77067C11.25 9.16308 11.293 9.54627 11.375 9.9165"
-                    stroke="white"
-                    strokeWidth="1.5"
-                  />
-                  <path
-                    d="M8.75 9.90908H20C23.5355 9.90908 25.3032 9.90908 26.4016 10.9164C27.5 11.9237 27.5 13.5449 27.5 16.7874V19.0802C27.5 22.3227 27.5 23.9439 26.4016 24.9512C25.3032 25.9585 23.5355 25.9585 20 25.9585H12.5C7.78595 25.9585 5.42894 25.9585 3.96446 24.6155C2.5 23.2723 2.5 21.1107 2.5 16.7874V14.4947C2.5 10.1713 2.5 8.00968 3.96446 6.6666C5.14333 5.58547 6.90054 5.37462 10 5.3335H12.5"
-                    stroke="white"
-                    strokeWidth="1.5"
-                    strokeLinecap="round"
+                    strokeOpacity="0.5"
+                    strokeDasharray="6 6"
                   />
                 </svg>
               </div>
-            </div>
-            <span className="text-2xl font-bold text-white mt-1">
-              {mybalance?.data ? `ETB ${mybalance.data}` : "ETB 0"}
-            </span>
-            <div>
-              <svg
-                width="462"
-                height="2"
-                viewBox="0 0 462 2"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <line
-                  y1="-0.5"
-                  x2="461.032"
-                  y2="-0.5"
-                  transform="matrix(0.999999 -0.00102619 0.00102518 1 0.395386 1.88477)"
-                  stroke="white"
-                  strokeOpacity="0.5"
-                  strokeDasharray="6 6"
-                />
-              </svg>
-            </div>
-            <div>
-              <Button
-                onClick={handleWithdrawModalOpen}
-                className="mt-4 w-32 bg-[#3989b9] text-white rounded-2xl font-medium "
-              >
-                <svg
-                  width="24"
-                  height="24"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
+              <div>
+                <Button
+                  onClick={handleWithdrawModalOpen}
+                  className="mt-4 w-32 bg-[#3989b9] text-white rounded-2xl font-medium "
                 >
-                  <path
-                    d="M18.508 14.0978L17.8716 10.6329C17.5961 9.13607 17.4584 8.38763 16.9142 7.94502C16.37 7.50241 15.5873 7.50146 14.023 7.50146H9.81921C8.25489 7.50146 7.47321 7.50146 6.92802 7.94502C6.38379 8.38763 6.24607 9.13607 5.97063 10.6329L5.33426 14.0978C4.76439 17.2046 4.4785 18.7585 5.35706 19.7776C6.23562 20.7986 7.85978 20.7986 11.1062 20.7986H12.736C15.9824 20.7986 17.6066 20.7986 18.4852 19.7785C19.3637 18.7585 19.0788 17.2046 18.508 14.0988"
-                    stroke="white"
-                    strokeWidth="1.25"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                  <path
-                    d="M11.9211 10.8256V16.9993M9.54658 15.0997L11.9211 17.4742L14.2956 15.0997M20.4692 11.3005C20.616 11.2273 20.749 11.1293 20.8625 11.0108C21.419 10.4353 21.419 9.50541 21.419 7.64571C21.419 5.786 21.419 4.8571 20.8625 4.27963C20.3059 3.70215 19.4112 3.70215 17.6199 3.70215H6.22229C4.43097 3.70215 3.53626 3.70215 2.97968 4.27963C2.4231 4.8571 2.4231 5.78695 2.4231 7.64571C2.4231 9.50446 2.4231 10.4343 2.97968 11.0108C3.09365 11.1299 3.22472 11.2264 3.37289 11.3005"
-                    stroke="white"
-                    strokeWidth="1.25"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-                {t("withdraw")}
-              </Button>
+                  <svg
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M18.508 14.0978L17.8716 10.6329C17.5961 9.13607 17.4584 8.38763 16.9142 7.94502C16.37 7.50241 15.5873 7.50146 14.023 7.50146H9.81921C8.25489 7.50146 7.47321 7.50146 6.92802 7.94502C6.38379 8.38763 6.24607 9.13607 5.97063 10.6329L5.33426 14.0978C4.76439 17.2046 4.4785 18.7585 5.35706 19.7776C6.23562 20.7986 7.85978 20.7986 11.1062 20.7986H12.736C15.9824 20.7986 17.6066 20.7986 18.4852 19.7785C19.3637 18.7585 19.0788 17.2046 18.508 14.0988"
+                      stroke="white"
+                      strokeWidth="1.25"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                    <path
+                      d="M11.9211 10.8256V16.9993M9.54658 15.0997L11.9211 17.4742L14.2956 15.0997M20.4692 11.3005C20.616 11.2273 20.749 11.1293 20.8625 11.0108C21.419 10.4353 21.419 9.50541 21.419 7.64571C21.419 5.786 21.419 4.8571 20.8625 4.27963C20.3059 3.70215 19.4112 3.70215 17.6199 3.70215H6.22229C4.43097 3.70215 3.53626 3.70215 2.97968 4.27963C2.4231 4.8571 2.4231 5.78695 2.4231 7.64571C2.4231 9.50446 2.4231 10.4343 2.97968 11.0108C3.09365 11.1299 3.22472 11.2264 3.37289 11.3005"
+                      stroke="white"
+                      strokeWidth="1.25"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                  {t("withdraw")}
+                </Button>
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
         {/* Stat Cards */}
         <div className="flex-1 grid grid-cols-1 sm:grid-cols-3 gap-4 w-full">
@@ -537,133 +531,135 @@ const Landing: React.FC<LandingProps> = ({ usertype }) => {
       </div>
 
       {/* --- TRANSACTION TABLE SECTION --- */}
-      <div className="mt-8">
-        <h2 className="text-xl font-semibold text-gray-900 mb-4">
-          {t("transactionHistory")}
-        </h2>
-        <div className="flex justify-start space-x-2 mt-2 mb-4">
-          <Button
-            className={`${type == "Credit" ? "bg-green-400 text-white" : "bg-white-600 text-gray-500"} rounded-3xl hover:bg-blue-100 hover:text-gray-500`}
-            onClick={() => setType("Credit")}
-          >
-            <span className={`h-2 w-2 rounded-full ${"bg-white"}`}></span>
-            {t("credit")}
-          </Button>
-          <Button
-            className={`${type === "Withdraw" ? "bg-primary text-white" : "bg-white-600 text-gray-500"}  rounded-3xl hover:bg-blue-200 border-b-blue-400`}
-            onClick={() => setType("Withdraw")}
-          >
-            <span
-              className={`h-2 w-2 rounded-full ${type === "Withdraw" ? "bg-white" : "bg-primary"}`}
-            ></span>
-            {t("withdraw")}
-          </Button>
-        </div>
+      {usertype !== "reviewer" && (
+        <div className="mt-8">
+          <h2 className="text-xl font-semibold text-gray-900 mb-4">
+            {t("transactionHistory")}
+          </h2>
+          <div className="flex justify-start space-x-2 mt-2 mb-4">
+            <Button
+              className={`${type == "Credit" ? "bg-green-400 text-white" : "bg-white-600 text-gray-500"} rounded-3xl hover:bg-blue-100 hover:text-gray-500`}
+              onClick={() => setType("Credit")}
+            >
+              <span className={`h-2 w-2 rounded-full ${"bg-white"}`}></span>
+              {t("credit")}
+            </Button>
+            <Button
+              className={`${type === "Withdraw" ? "bg-primary text-white" : "bg-white-600 text-gray-500"}  rounded-3xl hover:bg-blue-200 border-b-blue-400`}
+              onClick={() => setType("Withdraw")}
+            >
+              <span
+                className={`h-2 w-2 rounded-full ${type === "Withdraw" ? "bg-white" : "bg-primary"}`}
+              ></span>
+              {t("withdraw")}
+            </Button>
+          </div>
 
-        <Table>
-          <TableHeader>
-            {transactionTable.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map((header) => (
-                  <TableHead
-                    key={header.id}
-                    className="text-sm font-bold text-gray-500 p-4"
-                  >
-                    {header.isPlaceholder ? null : (
-                      <div
-                        className="flex items-center space-x-1 cursor-pointer"
-                        onClick={header.column.getToggleSortingHandler()}
-                      >
-                        <span>
-                          {flexRender(
-                            header.column.columnDef.header,
-                            header.getContext(),
-                          )}
-                        </span>
-                        {header.column.getCanSort() && (
-                          <span className="text-gray-500">
-                            {header.column.getIsSorted() === "asc" ? (
-                              <ArrowUp className="h-4 w-4" />
-                            ) : header.column.getIsSorted() === "desc" ? (
-                              <ArrowDown className="h-4 w-4" />
-                            ) : (
-                              <ArrowUpDown className="h-4 w-4" />
+          <Table>
+            <TableHeader>
+              {transactionTable.getHeaderGroups().map((headerGroup) => (
+                <TableRow key={headerGroup.id}>
+                  {headerGroup.headers.map((header) => (
+                    <TableHead
+                      key={header.id}
+                      className="text-sm font-bold text-gray-500 p-4"
+                    >
+                      {header.isPlaceholder ? null : (
+                        <div
+                          className="flex items-center space-x-1 cursor-pointer"
+                          onClick={header.column.getToggleSortingHandler()}
+                        >
+                          <span>
+                            {flexRender(
+                              header.column.columnDef.header,
+                              header.getContext(),
                             )}
                           </span>
-                        )}
-                      </div>
-                    )}
-                  </TableHead>
-                ))}
-              </TableRow>
-            ))}
-          </TableHeader>
-          <TableBody>
-            {isUserLoading ? (
-              <TableRow>
-                <TableCell
-                  colSpan={transactionColumns.length}
-                  className="h-24 text-center text-gray-500"
-                >
-                  <Loader2 className="h-8 w-8 animate-spin mx-auto" />
-                </TableCell>
-              </TableRow>
-            ) : transactionTable.getRowModel().rows?.length ? (
-              transactionTable.getRowModel().rows.map((row) => (
-                <TableRow
-                  key={row.id}
-                  className="border-t border-gray-100 hover:bg-gray-50"
-                >
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell
-                      key={cell.id}
-                      className="py-3 px-4 text-sm text-gray-600"
-                    >
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext(),
+                          {header.column.getCanSort() && (
+                            <span className="text-gray-500">
+                              {header.column.getIsSorted() === "asc" ? (
+                                <ArrowUp className="h-4 w-4" />
+                              ) : header.column.getIsSorted() === "desc" ? (
+                                <ArrowDown className="h-4 w-4" />
+                              ) : (
+                                <ArrowUpDown className="h-4 w-4" />
+                              )}
+                            </span>
+                          )}
+                        </div>
                       )}
-                    </TableCell>
+                    </TableHead>
                   ))}
                 </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell
-                  colSpan={transactionColumns.length}
-                  className="h-96 text-center text-gray-500"
-                >
-                  <div className="relative flex flex-col items-center justify-center py-12">
-                    <img
-                      src="/empty.svg"
-                      alt="No transactions available"
-                      className="w-64 h-64 opacity-50"
-                    />
-                  </div>
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-        <div className="flex items-center justify-between mt-4">
-          <PaginationControls
-            pagination={{
-              pageCount: totalPages,
-              page: page,
-              setPage: setPage,
-              pageSize: pageSize,
-              setPageSize: setPageSize,
-              showingText:
-                totaltransaction > 0
-                  ? `Showing ${(page - 1) * pageSize + 1} to ${Math.min(
-                      page * pageSize,
-                      totaltransaction,
-                    )} of ${totaltransaction} transactions`
-                  : "No transactions to show",
-            }}
-          />
+              ))}
+            </TableHeader>
+            <TableBody>
+              {isUserLoading ? (
+                <TableRow>
+                  <TableCell
+                    colSpan={transactionColumns.length}
+                    className="h-24 text-center text-gray-500"
+                  >
+                    <Loader2 className="h-8 w-8 animate-spin mx-auto" />
+                  </TableCell>
+                </TableRow>
+              ) : transactionTable.getRowModel().rows?.length ? (
+                transactionTable.getRowModel().rows.map((row) => (
+                  <TableRow
+                    key={row.id}
+                    className="border-t border-gray-100 hover:bg-gray-50"
+                  >
+                    {row.getVisibleCells().map((cell) => (
+                      <TableCell
+                        key={cell.id}
+                        className="py-3 px-4 text-sm text-gray-600"
+                      >
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext(),
+                        )}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell
+                    colSpan={transactionColumns.length}
+                    className="h-96 text-center text-gray-500"
+                  >
+                    <div className="relative flex flex-col items-center justify-center py-12">
+                      <img
+                        src="/empty.svg"
+                        alt="No transactions available"
+                        className="w-64 h-64 opacity-50"
+                      />
+                    </div>
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+          <div className="flex items-center justify-between mt-4">
+            <PaginationControls
+              pagination={{
+                pageCount: totalPages,
+                page: page,
+                setPage: setPage,
+                pageSize: pageSize,
+                setPageSize: setPageSize,
+                showingText:
+                  totaltransaction > 0
+                    ? `Showing ${(page - 1) * pageSize + 1} to ${Math.min(
+                        page * pageSize,
+                        totaltransaction,
+                      )} of ${totaltransaction} transactions`
+                    : "No transactions to show",
+              }}
+            />
+          </div>
         </div>
-      </div>
+      )}
 
       {/* --- WITHDRAW MODAL --- */}
       <Dialog open={isWithdrawModalOpen} onOpenChange={setIsWithdrawModalOpen}>
@@ -682,40 +678,39 @@ const Landing: React.FC<LandingProps> = ({ usertype }) => {
                 {t("paymentMethod")} <span className="text-red-500">*</span>
               </label>
               <Select
-                value={withdrawFormData.bank_code ? `${withdrawFormData.paymentMethod}|${withdrawFormData.bank_code}` : ""}
+                value={withdrawFormData.bank_code}
                 onValueChange={(value) => {
-                  const [name, id] = value.split("|");
+                  const selected = withdrawOptionsData?.data?.find(
+                    (option) => option.id.toString() === value,
+                  );
+
                   setWithdrawFormData((prev) => ({
                     ...prev,
-                    paymentMethod: name,
-                    bank_code: id,
+                    paymentMethod: selected?.name || "",
+                    bank_code: value,
                   }));
-                  setFormErrors((prev) => ({ ...prev, paymentMethod: "" }));
                 }}
               >
                 <SelectTrigger
                   id="paymentMethod"
-                  className={`w-full border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 ${formErrors.paymentMethod ? "border-red-500" : ""}`}
+                  className={`w-full border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 ${formErrors.bank_code ? "border-red-500" : ""}`}
                 >
                   <SelectValue placeholder={t("selectPaymentMethod")} />
                 </SelectTrigger>
                 <SelectContent>
                   {withdrawOptionsLoading ? (
-                    <SelectItem value="loading" disabled>Loading...</SelectItem>
+                    <SelectItem value="loading" disabled>
+                      Loading...
+                    </SelectItem>
                   ) : (
                     withdrawOptionsData?.data?.map((option) => (
-                      <SelectItem key={option.id} value={`${option.name}|${option.id}`}>
+                      <SelectItem key={option.id} value={option.id.toString()}>
                         {option.name}
                       </SelectItem>
                     ))
                   )}
                 </SelectContent>
               </Select>
-              {formErrors.paymentMethod && (
-                <p className="text-red-500 text-sm mt-1">
-                  {formErrors.paymentMethod}
-                </p>
-              )}
             </div>
             <div>
               <label
@@ -731,7 +726,6 @@ const Landing: React.FC<LandingProps> = ({ usertype }) => {
                 onChange={(e) =>
                   handleWithdrawFormChange("account_number", e.target.value)
                 }
-               
                 className={`w-full border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 ${formErrors.account_number ? "border-red-500" : ""}`}
               />
               {formErrors.account_number && (

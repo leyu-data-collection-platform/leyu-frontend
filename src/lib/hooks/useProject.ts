@@ -1704,3 +1704,62 @@ export const useToggleActivateTaskUser= () => {
 
 
 };
+
+// --- Project All (no pagination) ---
+
+export interface AllProjectsItem {
+  id: string;
+  name: string;
+  description: string;
+  status: "active" | "inactive" | "Active" | "Inactive";
+  is_archived: boolean;
+  cover_image_url?: string;
+  start_date: string;
+  end_date: string;
+  created_date: string;
+  tags?: string[] | null;
+}
+
+export interface AllProjectsResponse {
+  data: AllProjectsItem[];
+}
+
+export function useAllProjects() {
+  const { data: session } = useSession();
+
+  return useQuery<AllProjectsResponse>({
+    queryKey: ["allProjects"],
+    queryFn: async () => {
+      try {
+        if (!session?.access_token) {
+          throw new Error("No authentication token available");
+        }
+
+        const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+
+        const response = await axios.get<AllProjectsResponse>(
+          `${baseUrl}/project-mgmt/project/all`,
+          {
+            headers: {
+              Authorization: `Bearer ${session.access_token}`,
+            },
+          }
+        );
+
+        return response.data as AllProjectsResponse;
+      } catch (error) {
+        if (axios.isAxiosError(error)) {
+          const message =
+            error.response?.data?.message || "Failed to fetch projects";
+          toast.error("Error", { description: message });
+        }
+        throw error;
+      }
+    },
+    enabled: !!session?.access_token,
+    retry: (failureCount, error) => {
+      if (error.message === "No authentication token available") return false;
+      return failureCount < 2;
+    },
+  });
+}

@@ -72,15 +72,15 @@ const TaskStatisticsContributers: React.FC<MicroTaskListProps> = ({
         </div>
       ),
     },
-    {
-      header: "Email",
-      enableSorting: true,
-      cell: ({ row }) => (
-        <div className="min-w-[150px] max-w-[300px] truncate">
-          {row.original.contributor?.email || " "}
-        </div>
-      ),
-    },
+    // {
+    //   header: "Email",
+    //   enableSorting: true,
+    //   cell: ({ row }) => (
+    //     <div className="min-w-[150px] max-w-[300px] truncate">
+    //       {row.original.contributor?.email || " "}
+    //     </div>
+    //   ),
+    // },
     {
       header: " phone number ",
       enableSorting: true,
@@ -118,23 +118,32 @@ const TaskStatisticsContributers: React.FC<MicroTaskListProps> = ({
       ),
     },
     {
-      header: "Created date",
-      enableSorting: true,
-      cell: ({ row }) => (
-        <div className="min-w-[150px] max-w-[300px] truncate">
-          {row.original.created_date
-            ? new Date(row.original.created_date).toLocaleString()
-            : " "}
-        </div>
-      ),
-    },
-    {
       header: "Dead line",
       enableSorting: true,
       cell: ({ row }) => (
         <div className="min-w-[150px] max-w-[300px] truncate">
           {row.original.dead_line
             ? new Date(row.original.dead_line).toLocaleString()
+            : " "}
+        </div>
+      ),
+    },
+    {
+      header: "Status",
+      enableSorting: true,
+      cell: ({ row }) => (
+        <div className="min-w-[150px] max-w-[300px] truncate">
+          {row.original.status}
+        </div>
+      ),
+    },
+    {
+      header: "Created date",
+      enableSorting: true,
+      cell: ({ row }) => (
+        <div className="min-w-[150px] max-w-[300px] truncate">
+          {row.original.created_date
+            ? new Date(row.original.created_date).toLocaleString()
             : " "}
         </div>
       ),

@@ -1,7 +1,7 @@
 
 import { useSession } from "next-auth/react";
 import { toast } from "sonner";
-import { Invitation, InvitationResponse, InvitationTask, AssignAutomaticContributor, AssignTask, AssignTaskContributor, AssignfacilitatorContributor, MicroTask, Instruction, ProjectResponse } from "@/app/types/project";
+import { Invitation, InvitationResponse, InvitationTask, AssignAutomaticContributor, AssignTask, AssignTaskContributor, AssignfacilitatorContributor, MicroTask, Instruction, ProjectResponse, CreateInstruction } from "@/app/types/project";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { PaginationResponse, SinglerResponse, AllResponse, OneResponse } from "@/app/types/global";
 import axios from "axios";
@@ -158,7 +158,7 @@ export const GenerateInstruction = () => {
     const { data: session } = useSession();
     return useMutation(
         {
-            mutationFn: async (InstructionData: Instruction) => {
+            mutationFn: async (InstructionData: CreateInstruction) => {
                 if (!session?.access_token) {
                     throw new Error("No authentication token available");
                 }
@@ -200,7 +200,7 @@ export const GenerateQAInstruction = () => {
     const { data: session } = useSession();
     return useMutation(
         {
-            mutationFn: async (InstructionData: Instruction) => {
+            mutationFn: async (InstructionData: CreateInstruction) => {
                 if (!session?.access_token) {
                     throw new Error("No authentication token available");
                 }
@@ -242,7 +242,7 @@ export const GenerateReviewerInstruction = () => {
     const { data: session } = useSession();
     return useMutation(
         {
-            mutationFn: async (InstructionData: Instruction) => {
+            mutationFn: async (InstructionData: CreateInstruction) => {
                 if (!session?.access_token) {
                     throw new Error("No authentication token available");
                 }
@@ -293,7 +293,7 @@ export const useDeleteInstruction = ({
             const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
 
             const response = await axios.delete(
-                `${baseUrl}/project-mgmt/task/${id}/instruction`,
+                `${baseUrl}/project-mgmt/task/${task_id}/instruction/${id}`,
                 {
                     headers: {
                         Authorization: `Bearer ${session.access_token}`,
@@ -333,7 +333,7 @@ export const EditInstruction = () => {
                 InstructionData.video_instruction_url = InstructionData.video_instruction_url === "" ? null : InstructionData.video_instruction_url;
                 InstructionData.audio_instruction_url = InstructionData.audio_instruction_url === "" ? null : InstructionData.audio_instruction_url;
                 const response = await axios.put<InvitationResponseData>(
-                    `${process.env.NEXT_PUBLIC_API_BASE_URL}/project-mgmt/task/${InstructionData.taskId}/instruction`,
+                    `${process.env.NEXT_PUBLIC_API_BASE_URL}/project-mgmt/task/${InstructionData.taskId}/instruction/${InstructionData.id}`,
                     InstructionData,
                     {
                         headers: {

@@ -1,19 +1,53 @@
 "use client";
-import React, { useState, useEffect } from "react";
+
+import React, { useState, useCallback, memo } from "react";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 import { useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { TaskResponseData } from "@/app/types/project";
 import { Basedata, BasedataTaskType } from "@/app/types/basedate";
 import axios from "axios";
 import { useBasedataall, useBasedataTaskType } from "@/lib/hooks/useBasedata";
+import { useUpdateBasicTAsk } from "@/lib/hooks/useProject";
 import { toast } from "sonner";
+
+// ─── Constants ────────────────────────────────────────────────────────────────
+
+const HOURS_PER_DAY = 24;
+
+const CATEGORIES = [
+  {
+    key: "basic" as const,
+    label: "Basic Information",
+    description: "Task name, description, type, language, and access settings",
+  },
+  {
+    key: "demographics" as const,
+    label: "Demographics & Targeting",
+    description: "Dialect, age range, and gender distribution requirements",
+  },
+  {
+    key: "location" as const,
+    label: "Location & Sectors",
+    description: "Geographic location and sector-specific requirements",
+  },
+  {
+    key: "configuration" as const,
+    label: "Task Configuration",
+    description:
+      "Contributor limits, time limits, batch size, and character/audio constraints",
+  },
+] as const;
+
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+type UpdateCategory = (typeof CATEGORIES)[number]["key"];
 
 interface UpdateTaskFormProps {
   task: TaskResponseData;
   onCancel: () => void;
+  selectedCategory: UpdateCategory;
 }
 
 interface DialectOption {
@@ -27,15 +61,23 @@ interface DialectResponse {
   data: DialectOption[];
 }
 
-interface UpdateTaskForm {
+interface UpdateTaskFormState {
   id: string;
+  // basic fields
+  name: string;
+  description: string;
+  task_type_id: string;
+  language_id: string;
+  is_public: boolean;
+  require_contributor_test: boolean;
+  // configuration fields
   max_contributor_per_micro_task: number;
   max_contributor_per_facilitator: number | null;
   max_dataset_per_reviewer: number | null;
   max_reviewer_per_dataset: number | null;
   max_micro_task_per_contributor: number | null;
-  minimum_seconds?: number | null;
-  maximum_seconds?: number | null;
+  minimum_seconds: number | null;
+  maximum_seconds: number | null;
   contributor_completion_time_limit: number | null;
   reviewer_completion_time_limit: number | null;
   minimum_characters_length: number | null;
@@ -52,398 +94,492 @@ interface UpdateTaskForm {
   is_age_specific: boolean;
   age: { min: number | null; max: number | null };
   is_sector_specific: boolean;
-  sector: { id: string }[];
+  sectors: string[];
   is_gender_specific: boolean;
   gender: { male: number; female: number };
   is_location_specific: boolean;
-  location: { name: string };
+  locations: string[];
 }
 
-const UpdateTask: React.FC<UpdateTaskFormProps> = ({ task, onCancel }) => {
-  // Expandable Description Component
-  const ExpandableDescription: React.FC<{ text: string; maxLength?: number }> = ({ text, maxLength = 100 }) => {
+// ─── Sub-components ───────────────────────────────────────────────────────────
+
+interface ExpandableDescriptionProps {
+  text: string;
+  maxLength?: number;
+}
+
+const ExpandableDescription = memo<ExpandableDescriptionProps>(
+  ({ text, maxLength = 100 }) => {
     const [isExpanded, setIsExpanded] = useState(false);
     const shouldTruncate = text.length > maxLength;
-    
+
     return (
       <p className="text-xs text-gray-500">
-        {shouldTruncate && !isExpanded ? `${text.slice(0, maxLength)}... ` : text}
+        {shouldTruncate && !isExpanded
+          ? `${text.slice(0, maxLength)}... `
+          : text}
         {shouldTruncate && (
           <button
             type="button"
-            onClick={() => setIsExpanded(!isExpanded)}
+            onClick={() => setIsExpanded((prev) => !prev)}
             className="font-medium ml-1"
-            style={{ color: '#095FAF' }}
+            style={{ color: "#095FAF" }}
           >
-            {isExpanded ? 'Show less' : 'See more'}
+            {isExpanded ? "Show less" : "See more"}
           </button>
         )}
       </p>
     );
-  };
+  },
+);
+ExpandableDescription.displayName = "ExpandableDescription";
 
-  const [step, setStep] = useState(1);
+// ─── Field helpers ────────────────────────────────────────────────────────────
+
+interface FieldProps {
+  label: string;
+  error?: string;
+  children: React.ReactNode;
+  description?: string;
+}
+
+const Field: React.FC<FieldProps> = ({
+  label,
+  error,
+  children,
+  description,
+}) => (
+  <div className="flex flex-col gap-1">
+    <label className="text-sm font-medium text-gray-700">{label}</label>
+    {description && <ExpandableDescription text={description} />}
+    {children}
+    {error && <p className="text-xs text-red-500">{error}</p>}
+  </div>
+);
+
+// ─── Main Component ───────────────────────────────────────────────────────────
+
+export const UpdateTask: React.FC<UpdateTaskFormProps> = ({
+  task,
+  onCancel,
+  selectedCategory,
+}) => {
   const { data: session } = useSession();
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const router = useRouter();
+  const queryClient = useQueryClient();
 
-  const [formData, setFormData] = useState<UpdateTaskForm>({
+  // ── Initial state ──────────────────────────────────────────────────────────
+
+  const [formData, setFormData] = useState<UpdateTaskFormState>({
     id: task.id,
+    name: task.name,
+    description: task.description ?? "",
+    task_type_id: task.task_type_id,
+    language_id: task.language_id,
+    is_public: task.is_public,
+    require_contributor_test: task.require_contributor_test,
     max_contributor_per_micro_task:
       task.taskRequirement.max_contributor_per_micro_task,
     max_contributor_per_facilitator:
       task.taskRequirement.max_contributor_per_facilitator,
-    minimum_characters_length: task.taskRequirement.minimum_characters_length ?? null,
-    maximum_characters_length: task.taskRequirement.maximum_characters_length ?? null,
+    minimum_characters_length:
+      task.taskRequirement.minimum_characters_length ?? null,
+    maximum_characters_length:
+      task.taskRequirement.maximum_characters_length ?? null,
     maximum_seconds: task.taskRequirement.maximum_seconds ?? null,
     minimum_seconds: task.taskRequirement.minimum_seconds ?? null,
-    max_expected_no_of_contributors: task.max_expected_no_of_contributors ?? null,
+    max_expected_no_of_contributors:
+      task.max_expected_no_of_contributors ?? null,
     max_dataset_per_reviewer: task.taskRequirement.max_dataset_per_reviewer,
-    max_reviewer_per_dataset: task.taskRequirement.max_reviewer_per_dataset ?? 1,
-    appriximate_time_per_batch: task.taskRequirement.appriximate_time_per_batch ?? null,
+    max_reviewer_per_dataset:
+      task.taskRequirement.max_reviewer_per_dataset ?? 1,
+    appriximate_time_per_batch:
+      task.taskRequirement.appriximate_time_per_batch ?? null,
     reviewer_completion_time_limit:
-      task?.reviewer_completion_time_limit != null
-        ? task.reviewer_completion_time_limit / 24
+      task.reviewer_completion_time_limit != null
+        ? task.reviewer_completion_time_limit / HOURS_PER_DAY
         : null,
     contributor_completion_time_limit:
       task.contributor_completion_time_limit != null
-        ? task.contributor_completion_time_limit / 24
+        ? task.contributor_completion_time_limit / HOURS_PER_DAY
         : null,
-    reviewer_payment_per_microtask: task.payment?.reviewer_credit_per_microtask ?? null,
-    contributor_payment_per_microtask: task.payment?.contributor_credit_per_microtask ?? null,
+    reviewer_payment_per_microtask:
+      task.payment?.reviewer_credit_per_microtask ?? null,
+    contributor_payment_per_microtask:
+      task.payment?.contributor_credit_per_microtask ?? null,
     max_retry_per_task: task.taskRequirement.max_retry_per_task,
     expected_number_of_total_contributors:
       task.taskRequirement.expected_number_of_total_contributors,
-    max_micro_task_per_contributor: task.taskRequirement.max_micro_task_per_contributor ?? null,
+    max_micro_task_per_contributor:
+      task.taskRequirement.max_micro_task_per_contributor ?? null,
     batch: task.taskRequirement.batch ?? null,
     is_dialect_specific: task.taskRequirement.is_dialect_specific,
-    dialects:
-      task.taskRequirement.dialects?.map((dialect) => ({ id: dialect.id })) ||
-      [],
+    dialects: task.taskRequirement.dialects?.map((d) => ({ id: d.id })) ?? [],
     is_age_specific: task.taskRequirement.is_age_specific,
-    age: task.taskRequirement.age || { min: null, max: null },
+    age: task.taskRequirement.age ?? { min: null, max: null },
     is_sector_specific: task.taskRequirement.is_sector_specific,
-    sector:
-      task.taskRequirement.sectors?.map((sector) => ({ id: sector.name })) ||
-      [],
+    // sectors is an array of names from the API
+    sectors: task.taskRequirement.sectors ?? [],
     is_gender_specific: task.taskRequirement.is_gender_specific,
-    gender: task.taskRequirement.gender || { male: 0, female: 0 },
+    gender: task.taskRequirement.gender ?? { male: 0, female: 0 },
     is_location_specific: task.taskRequirement.is_location_specific,
-    location: task.taskRequirement.locations?.[0] || { name: "" },
+    locations: task.taskRequirement.locations?.map((l) => l.name) ?? [],
   });
-  const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
-  const { data: languageData, isLoading: isLanguageLoading } = useBasedataall({
-    servicename: "language",
-  });
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // ── Remote data ────────────────────────────────────────────────────────────
+
   const { data: sectorData, isLoading: isSectorLoading } = useBasedataall({
     servicename: "sector",
+  });
+  const { data: languageData, isLoading: isLanguageLoading } = useBasedataall({
+    servicename: "language",
   });
   const { data: TaskTypeData, isLoading: isTaskTypeLoading } =
     useBasedataTaskType({
       servicename: "task-type",
     });
 
-  const languageOptions =
-    languageData?.data?.map((lang: Basedata) => ({
-      id: lang.id,
-      name: lang.name,
-      code: lang.code,
-      description: lang.description,
-    })) || [];
+  const taskTypeOptions =
+    TaskTypeData?.data?.map((t: BasedataTaskType) => ({
+      id: t.id,
+      name: t.task_type,
+    })) ?? [];
 
-  const { data: dialectResponseData, isLoading: regionsLoading } =
+  const languageOptions =
+    languageData?.data?.map((l: Basedata) => ({ id: l.id, name: l.name })) ?? [];
+
+  const sectorOptions =
+    sectorData?.data?.map((s: Basedata) => ({ id: s.id, name: s.name })) ?? [];
+  const { data: dialectResponseData, isLoading: dialectsLoading } =
     useQuery<DialectResponse>({
       queryKey: ["dialect", task.language_id],
       queryFn: async () => {
-        if (!session?.access_token) {
+        if (!session?.access_token)
           throw new Error("No authentication token available");
-        }
         const response = await axios.get<DialectResponse>(
           `${process.env.NEXT_PUBLIC_API_BASE_URL}/setting/dialect/language/${task.language_id}`,
-          {
-            headers: { Authorization: `Bearer ${session.access_token}` },
-          }
+          { headers: { Authorization: `Bearer ${session.access_token}` } },
         );
         return response.data;
       },
       enabled: !!session?.access_token && !!task.language_id,
     });
 
-  const sectorOptions =
-    sectorData?.data?.map((sector: Basedata) => ({
-      id: sector.id,
-      name: sector.name,
-    })) || [];
+  const dialectOptions = dialectResponseData?.data ?? [];
 
-  const taskTypeOptions =
-    TaskTypeData?.data?.map((taskType: BasedataTaskType) => ({
-      id: taskType.id,
-      name: taskType.task_type,
-    })) || [];
+  const selectedTaskType = taskTypeOptions.find(
+    (t: { id: string; name: string }) => t.id === task.task_type_id,
+  );
+  const isTextAudio = selectedTaskType?.name === "text-audio";
 
-  const handleChange = (
-    e: React.ChangeEvent<
-      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
-    >
-  ) => {
-    const { name, value, type } = e.target;
-    if (type === "checkbox") {
-      const target = e.target as HTMLInputElement;
-      setFormData((prev) => ({
-        ...prev,
-        [name]: target.checked,
-      }));
-    } else if (type === "number") {
-      const numValue = value === "" ? null : Number(value);
-      // Prevent negative values - allow positive, zero, and null
-      if (numValue !== null && numValue < 0) {
-        return; // Don't update state if value is negative
+  const isLoading = isSectorLoading || isTaskTypeLoading || dialectsLoading || isLanguageLoading;
+
+  // ── Handlers ───────────────────────────────────────────────────────────────
+
+  const clearError = useCallback((key: string) => {
+    setErrors((prev) => {
+      if (!prev[key]) return prev;
+      const next = { ...prev };
+      delete next[key];
+      return next;
+    });
+  }, []);
+
+  const handleChange = useCallback(
+    (
+      e: React.ChangeEvent<
+        HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+      >,
+    ) => {
+      const { name, value, type } = e.target;
+
+      if (type === "checkbox") {
+        const checked = (e.target as HTMLInputElement).checked;
+        setFormData((prev) => ({ ...prev, [name]: checked }));
+      } else if (type === "number") {
+        const numValue = value === "" ? null : Number(value);
+        if (numValue !== null && numValue < 0) return;
+        setFormData((prev) => ({ ...prev, [name]: numValue }));
+      } else {
+        setFormData((prev) => ({ ...prev, [name]: value }));
       }
+
+      clearError(name);
+    },
+    [clearError],
+  );
+
+  const handleNestedChange = useCallback(
+    (field: "age" | "gender", subField: string, value: number | null) => {
+      if (value !== null && value < 0) return;
       setFormData((prev) => ({
         ...prev,
-        [name]: numValue,
+        [field]: {
+          ...(prev[field] as Record<string, number | null>),
+          [subField]: value,
+        },
       }));
-    } else {
+      clearError(`${field}.${subField}`);
+    },
+    [clearError],
+  );
+
+  const handleDialectToggle = useCallback(
+    (dialectId: string) => {
       setFormData((prev) => ({
         ...prev,
-        [name]: value,
+        dialects: prev.dialects.some((d) => d.id === dialectId)
+          ? prev.dialects.filter((d) => d.id !== dialectId)
+          : [...prev.dialects, { id: dialectId }],
       }));
-    }
-    setErrors((prev) => ({ ...prev, [name]: "" }));
-  };
+      clearError("dialects");
+    },
+    [clearError],
+  );
 
-  const handleDialectToggle = (dialectId: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      dialects: prev.dialects.some((d) => d.id === dialectId)
-        ? prev.dialects.filter((d) => d.id !== dialectId)
-        : [...prev.dialects, { id: dialectId }],
-    }));
-    setErrors((prev) => ({ ...prev, dialects: "" }));
-  };
-
-  const handleNestedChange = (
-    field: "age" | "gender",
-    subField: string,
-    value: number | null
-  ) => {
-    // Prevent negative values - allow positive, zero, and null
-    if (value !== null && value < 0) {
-      return; // Don't update state if value is negative
-    }
-    setFormData((prev) => ({
-      ...prev,
-      [field]: {
-        ...(prev[field] as { [key: string]: number | null }),
-        [subField]: value,
-      },
-    }));
-    setErrors((prev) => ({ ...prev, [`${field}.${subField}`]: "" }));
-  };
-
-  const handleArrayChange = (
-    field: "dialects" | "sector" | "location",
-    value: string
-  ) => {
-    if (field === "location") {
-      setFormData((prev) => ({
-        ...prev,
-        location: { name: value },
-      }));
-    } else {
-      setFormData((prev) => ({
-        ...prev,
-        [field]: prev[field].some((item) => item.id === value)
-          ? prev[field]
-          : [...prev[field], { id: value }],
-      }));
-    }
-    setErrors((prev) => ({ ...prev, [field]: "" }));
-  };
-
-  const handleGenderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { value, checked } = e.target;
-    if (checked) {
+  // FIX: was setting male:0 when "Male" was selected (values were inverted)
+  const handleGenderChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const { value, checked } = e.target;
+      if (!checked) return;
       setFormData((prev) => ({
         ...prev,
         gender: {
-          ...(prev.gender || { male: 0, female: 0 }),
           male: value === "Male" ? 100 : 0,
           female: value === "Female" ? 100 : 0,
         },
       }));
-      setErrors((prev) => ({ ...prev, gender: "" }));
-    }
-  };
-
-  const handleGenderPercentage = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const percentage = Number(e.target.value);
-    setFormData((prev) => {
-      const isMaleSelected =
-        prev.gender?.female === 100 ||
-        (!prev.gender?.male && !prev.gender?.female);
-      return {
-        ...prev,
-        gender: {
-          ...(prev.gender || { female: 0, male: 0 }),
-          female: isMaleSelected ? percentage : 100 - percentage,
-          male: isMaleSelected ? 100 - percentage : percentage,
-        },
-      };
-    });
-    setErrors((prev) => ({ ...prev, gender: "" }));
-  };
-
-  const selectedTaskType = taskTypeOptions.find(
-    (taskType: { id: string; name: string }) =>
-      taskType.id === task.task_type_id
+      clearError("gender");
+    },
+    [clearError],
   );
-  const isTextAudio = selectedTaskType?.name === "text-audio";
 
-  const validateStep = (currentStep: number): boolean => {
-    const newErrors: { [key: string]: string } = {};
+  const handleGenderPercentage = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const percentage = Number(e.target.value);
+      setFormData((prev) => {
+        const femaleSelected =
+          prev.gender?.female === 100 ||
+          (!prev.gender?.male && !prev.gender?.female);
+        return {
+          ...prev,
+          gender: {
+            female: femaleSelected ? percentage : 100 - percentage,
+            male: femaleSelected ? 100 - percentage : percentage,
+          },
+        };
+      });
+      clearError("gender");
+    },
+    [clearError],
+  );
 
-    switch (currentStep) {
-      case 1:
-        if (formData.max_contributor_per_micro_task !== null && formData.max_contributor_per_micro_task < 0) {
-          newErrors.max_contributor_per_micro_task = "Cannot be negative";
-        } else if (!formData.max_contributor_per_micro_task || formData.max_contributor_per_micro_task <= 0) {
-          newErrors.max_contributor_per_micro_task = "Must be greater than 0";
-        }
-        if (formData.max_contributor_per_facilitator !== null && formData.max_contributor_per_facilitator < 0) {
-          newErrors.max_contributor_per_facilitator = "Cannot be negative";
-        }
-        if (formData.max_dataset_per_reviewer !== null && formData.max_dataset_per_reviewer < 0) {
-          newErrors.max_dataset_per_reviewer = "Cannot be negative";
-        }
-        if (formData.max_reviewer_per_dataset !== null && formData.max_reviewer_per_dataset <= 0) {
-          newErrors.max_reviewer_per_dataset = "Must be greater than 0";
-        }
-        if (formData.contributor_completion_time_limit !== null && formData.contributor_completion_time_limit < 0) {
-          newErrors.contributor_completion_time_limit = "Cannot be negative";
-        }
-        if (formData.reviewer_completion_time_limit !== null && formData.reviewer_completion_time_limit < 0) {
-          newErrors.reviewer_completion_time_limit = "Cannot be negative";
-        }
-        if (formData.max_retry_per_task !== null && formData.max_retry_per_task < 0) {
-          newErrors.max_retry_per_task = "Cannot be negative";
-        }
-        if (formData.appriximate_time_per_batch !== null && formData.appriximate_time_per_batch < 0) {
-          newErrors.appriximate_time_per_batch = "Cannot be negative";
-        } else if (!formData.appriximate_time_per_batch || formData.appriximate_time_per_batch <= 0) {
-          newErrors.appriximate_time_per_batch = "Must be greater than 0";
-        }
-        if (formData.max_expected_no_of_contributors !== null && formData.max_expected_no_of_contributors < 0) {
-          newErrors.max_expected_no_of_contributors = "Cannot be negative";
-        }
-        if (formData.max_micro_task_per_contributor !== null && formData.max_micro_task_per_contributor < 0) {
-          newErrors.max_micro_task_per_contributor = "Cannot be negative";
-        } else if (!formData.max_micro_task_per_contributor || formData.max_micro_task_per_contributor <= 0) {
-          newErrors.max_micro_task_per_contributor = "Must be greater than 0";
-        }
-        if (formData.batch !== null && formData.batch < 0) {
-          newErrors.batch = "Cannot be negative";
-        }
-      
-        if (!isTextAudio) {
-          if (formData.minimum_characters_length !== null && formData.minimum_characters_length < 0) {
-            newErrors.minimum_characters_length = "Cannot be negative";
-          } else if (
-            (formData.minimum_characters_length
-              ? formData.minimum_characters_length
-              : 0) <= 0
-          ) {
-            newErrors.minimum_characters_length = "Must be greater than 0";
-          }
-          if (formData.maximum_characters_length !== null && formData.maximum_characters_length < 0) {
-            newErrors.maximum_characters_length = "Cannot be negative";
-          } else if (
-            (formData.maximum_characters_length
-              ? formData.maximum_characters_length
-              : 0) <= 0
-          ) {
-            newErrors.maximum_characters_length = "Must be greater than 0";
-          }
-          if (
-            (formData.minimum_characters_length
-              ? formData.minimum_characters_length
-              : 0) >=
-            (formData.maximum_characters_length
-              ? formData.maximum_characters_length
-              : 0)
-          ) {
-            newErrors.minimum_characters_length =
-              "Must be less than maximum characters length";
-          }
-        }
-        if (isTextAudio) {
-          if (formData.minimum_seconds !== null && formData.minimum_seconds !== undefined && formData.minimum_seconds < 0) {
-            newErrors.minimum_seconds = "Cannot be negative";
-          } else if ((formData.minimum_seconds ? formData.minimum_seconds : 0) <= 0) {
-            newErrors.minimum_seconds = "Must be greater than 0";
-          }
-          if (formData.maximum_seconds !== null && formData.maximum_seconds !== undefined && formData.maximum_seconds < 0) {
-            newErrors.maximum_seconds = "Cannot be negative";
-          } else if ((formData.maximum_seconds ? formData.maximum_seconds : 0) <= 0) {
-            newErrors.maximum_seconds = "Must be greater than 0";
-          }
-          if (
-            formData.minimum_seconds !== null && 
-            formData.minimum_seconds !== undefined &&
-            formData.maximum_seconds !== null && 
-            formData.maximum_seconds !== undefined &&
-            formData.minimum_seconds >= formData.maximum_seconds
-          ) {
-            newErrors.minimum_seconds = "Must be less than maximum seconds";
-          }
-        }
-        if (formData.batch && formData.max_micro_task_per_contributor && formData.batch > formData.max_micro_task_per_contributor) {
-          newErrors.batch =
-            "Must be less than maximum micro task per contributor";
-        }
-        break;
-      case 2:
-        if (formData.is_dialect_specific && !formData.dialects.length) {
-          newErrors.dialects = "At least one dialect is required";
-        }
-        if (formData.is_age_specific) {
-          if (formData.age?.min !== null && formData.age?.min !== undefined && formData.age.min < 0) {
-            newErrors.age = "Age cannot be negative";
-          } else if (formData.age?.max !== null && formData.age?.max !== undefined && formData.age.max < 0) {
-            newErrors.age = "Age cannot be negative";
-          } else if (!formData.age || !formData.age.min || !formData.age.max || formData.age.min <= 0 || formData.age.max <= 0) {
-            newErrors.age = "Both min and max age must be greater than 0";
-          } else if (formData.age.min >= formData.age.max) {
-            newErrors.age = "Minimum age must be less than maximum age";
-          }
-        }
-        if (formData.is_sector_specific && !formData.sector.length) {
-          newErrors.sector = "At least one sector is required";
+  const handleSectorToggle = useCallback(
+    (sectorName: string) => {
+      setFormData((prev) => ({
+        ...prev,
+        sectors: prev.sectors.includes(sectorName)
+          ? prev.sectors.filter((s) => s !== sectorName)
+          : [...prev.sectors, sectorName],
+      }));
+      clearError("sectors");
+    },
+    [clearError],
+  );
+
+  // ── Validation ─────────────────────────────────────────────────────────────
+
+  const validate = useCallback((): boolean => {
+    const newErrors: Record<string, string> = {};
+
+    if (selectedCategory === "basic") {
+      if (!formData.name.trim()) {
+        newErrors.name = "Task name is required";
+      }
+      if (!formData.task_type_id) {
+        newErrors.task_type_id = "Task type is required";
+      }
+      if (!formData.language_id) {
+        newErrors.language_id = "Language is required";
+      }
+      if (
+        formData.contributor_completion_time_limit !== null &&
+        formData.contributor_completion_time_limit < 0
+      ) {
+        newErrors.contributor_completion_time_limit = "Cannot be negative";
+      }
+      if (
+        formData.reviewer_completion_time_limit !== null &&
+        formData.reviewer_completion_time_limit < 0
+      ) {
+        newErrors.reviewer_completion_time_limit = "Cannot be negative";
+      }
+      if (
+        formData.max_expected_no_of_contributors !== null &&
+        formData.max_expected_no_of_contributors < 0
+      ) {
+        newErrors.max_expected_no_of_contributors = "Cannot be negative";
+      }
+    }
+
+    if (selectedCategory === "configuration") {
+      if (
+        !formData.max_contributor_per_micro_task ||
+        formData.max_contributor_per_micro_task <= 0
+      ) {
+        newErrors.max_contributor_per_micro_task = "Must be greater than 0";
+      }
+      if (
+        formData.max_contributor_per_facilitator !== null &&
+        formData.max_contributor_per_facilitator < 0
+      ) {
+        newErrors.max_contributor_per_facilitator = "Cannot be negative";
+      }
+      if (
+        formData.max_dataset_per_reviewer !== null &&
+        formData.max_dataset_per_reviewer < 0
+      ) {
+        newErrors.max_dataset_per_reviewer = "Cannot be negative";
+      }
+      if (
+        formData.max_reviewer_per_dataset !== null &&
+        formData.max_reviewer_per_dataset <= 0
+      ) {
+        newErrors.max_reviewer_per_dataset = "Must be greater than 0";
+      }
+      if (
+        formData.contributor_completion_time_limit !== null &&
+        formData.contributor_completion_time_limit < 0
+      ) {
+        newErrors.contributor_completion_time_limit = "Cannot be negative";
+      }
+      if (
+        formData.reviewer_completion_time_limit !== null &&
+        formData.reviewer_completion_time_limit < 0
+      ) {
+        newErrors.reviewer_completion_time_limit = "Cannot be negative";
+      }
+      if (
+        formData.max_retry_per_task !== null &&
+        formData.max_retry_per_task < 0
+      ) {
+        newErrors.max_retry_per_task = "Cannot be negative";
+      }
+      if (
+        !formData.appriximate_time_per_batch ||
+        formData.appriximate_time_per_batch <= 0
+      ) {
+        newErrors.appriximate_time_per_batch = "Must be greater than 0";
+      }
+      if (
+        formData.max_expected_no_of_contributors !== null &&
+        formData.max_expected_no_of_contributors < 0
+      ) {
+        newErrors.max_expected_no_of_contributors = "Cannot be negative";
+      }
+      if (
+        !formData.max_micro_task_per_contributor ||
+        formData.max_micro_task_per_contributor <= 0
+      ) {
+        newErrors.max_micro_task_per_contributor = "Must be greater than 0";
+      }
+      if (formData.batch !== null && formData.batch < 0) {
+        newErrors.batch = "Cannot be negative";
+      }
+      if (
+        formData.batch != null &&
+        formData.max_micro_task_per_contributor != null &&
+        formData.batch > formData.max_micro_task_per_contributor
+      ) {
+        newErrors.batch =
+          "Must be less than maximum assignment per contributor";
+      }
+
+      if (!isTextAudio) {
+        if (
+          !formData.minimum_characters_length ||
+          formData.minimum_characters_length <= 0
+        ) {
+          newErrors.minimum_characters_length = "Must be greater than 0";
         }
         if (
-          formData.is_gender_specific &&
-          !formData.gender.male &&
-          !formData.gender.female
+          !formData.maximum_characters_length ||
+          formData.maximum_characters_length <= 0
         ) {
-          newErrors.gender = "Please select a gender distribution";
+          newErrors.maximum_characters_length = "Must be greater than 0";
         }
-        if (formData.is_location_specific && !formData.location.name) {
-          newErrors.location = "Location name is required";
+        if (
+          (formData.minimum_characters_length ?? 0) >=
+          (formData.maximum_characters_length ?? 0)
+        ) {
+          newErrors.minimum_characters_length =
+            "Must be less than maximum characters length";
         }
-        break;
+      }
+
+      if (isTextAudio) {
+        if (!formData.minimum_seconds || formData.minimum_seconds <= 0) {
+          newErrors.minimum_seconds = "Must be greater than 0";
+        }
+        if (!formData.maximum_seconds || formData.maximum_seconds <= 0) {
+          newErrors.maximum_seconds = "Must be greater than 0";
+        }
+        if (
+          formData.minimum_seconds != null &&
+          formData.maximum_seconds != null &&
+          formData.minimum_seconds >= formData.maximum_seconds
+        ) {
+          newErrors.minimum_seconds = "Must be less than maximum seconds";
+        }
+      }
+    }
+
+    if (selectedCategory === "demographics") {
+      if (formData.is_dialect_specific && !formData.dialects.length) {
+        newErrors.dialects = "At least one dialect is required";
+      }
+      if (formData.is_age_specific) {
+        if (
+          !formData.age?.min ||
+          !formData.age?.max ||
+          formData.age.min <= 0 ||
+          formData.age.max <= 0
+        ) {
+          newErrors.age = "Both min and max age must be greater than 0";
+        } else if (formData.age.min >= formData.age.max) {
+          newErrors.age = "Minimum age must be less than maximum age";
+        }
+      }
+      if (
+        formData.is_gender_specific &&
+        !formData.gender.male &&
+        !formData.gender.female
+      ) {
+        newErrors.gender = "Please select a gender distribution";
+      }
+    }
+
+    if (selectedCategory === "location") {
+      if (formData.is_sector_specific && !formData.sectors.length) {
+        newErrors.sectors = "At least one sector is required";
+      }
+      if (formData.is_location_specific && !formData.locations.length) {
+        newErrors.locations = "Location name is required";
+      }
     }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
-  };
+  }, [formData, selectedCategory, isTextAudio]);
 
-  const queryClient = useQueryClient();
+  // ── Mutation ───────────────────────────────────────────────────────────────
+
   const updateTaskMutation = useMutation({
-    mutationFn: async (taskData: UpdateTaskForm) => {
-      if (!session?.access_token) {
+    mutationFn: async (taskData: UpdateTaskFormState) => {
+      if (!session?.access_token)
         throw new Error("No authentication token available");
-      }
+
       const response = await axios.put(
         `${process.env.NEXT_PUBLIC_API_BASE_URL}/project-mgmt/task/${taskData.id}/requirement`,
         {
@@ -459,6 +595,9 @@ const UpdateTask: React.FC<UpdateTaskFormProps> = ({ task, onCancel }) => {
           max_retry_per_task: taskData.max_retry_per_task,
           expected_number_of_total_contributors:
             taskData.expected_number_of_total_contributors,
+          // FIX: was missing from mutation payload
+          max_expected_no_of_contributors:
+            taskData.max_expected_no_of_contributors,
           max_micro_task_per_contributor:
             taskData.max_micro_task_per_contributor,
           batch: taskData.batch,
@@ -467,1099 +606,85 @@ const UpdateTask: React.FC<UpdateTaskFormProps> = ({ task, onCancel }) => {
           is_age_specific: taskData.is_age_specific,
           age: taskData.is_age_specific ? taskData.age : { min: 0, max: 0 },
           is_sector_specific: taskData.is_sector_specific,
-          sector: taskData.is_sector_specific ? taskData.sector : [],
+          sectors: taskData.is_sector_specific ? taskData.sectors : [],
           maximum_characters_length: taskData.maximum_characters_length,
           minimum_characters_length: taskData.minimum_characters_length,
           contributor_completion_time_limit:
             taskData.contributor_completion_time_limit != null
-              ? taskData.contributor_completion_time_limit * 24
+              ? taskData.contributor_completion_time_limit * HOURS_PER_DAY
               : null,
           reviewer_completion_time_limit:
             taskData.reviewer_completion_time_limit != null
-              ? taskData.reviewer_completion_time_limit * 24
+              ? taskData.reviewer_completion_time_limit * HOURS_PER_DAY
               : null,
+          max_dataset_per_reviewer: taskData.max_dataset_per_reviewer,
+          max_reviewer_per_dataset: taskData.max_reviewer_per_dataset,
           is_gender_specific: taskData.is_gender_specific,
           gender: taskData.is_gender_specific
             ? taskData.gender
             : { male: 0, female: 0 },
           is_location_specific: taskData.is_location_specific,
-          location: taskData.is_location_specific
-            ? taskData.location
-            : { name: "" },
+          locations: taskData.is_location_specific ? taskData.locations : [],
           ...(isTextAudio && {
             minimum_seconds: taskData.minimum_seconds,
             maximum_seconds: taskData.maximum_seconds,
           }),
         },
-        {
-          headers: { Authorization: `Bearer ${session.access_token}` },
-        }
+        { headers: { Authorization: `Bearer ${session.access_token}` } },
       );
       return response.data;
     },
     onSuccess: () => {
-      toast.success("Success", {
-        description: "Task updated successfully",
-      });
+      toast.success("Task updated successfully");
       queryClient.invalidateQueries({ queryKey: ["task"] });
+      onCancel();
     },
     onError: (error) => {
       if (axios.isAxiosError(error)) {
-        const errorMessage =
-          error.response?.data?.message || "Failed to update task";
-        const errorDetails = error.response?.data?.errors
-          ? JSON.stringify(error.response.data.errors)
+        const message =
+          error.response?.data?.message ?? "Failed to update task";
+        const details = error.response?.data?.errors
+          ? `: ${JSON.stringify(error.response.data.errors)}`
           : "";
-        toast.error("Error", {
-          description: `${errorMessage}${errorDetails ? `: ${errorDetails}` : ""}`,
-        });
+        toast.error(`${message}${details}`);
       } else {
-        toast.error("Error", {
-          description: "An unexpected error occurred",
-        });
+        toast.error("An unexpected error occurred");
       }
     },
   });
 
-  const handleSubmit = async () => {
-    if (validateStep(step)) {
-      setIsSubmitting(true);
-      try {
-        await updateTaskMutation.mutateAsync(formData);
-        setFormData({
-          id: "",
-          max_contributor_per_micro_task: 0,
-          max_dataset_per_reviewer: 0,
-          max_reviewer_per_dataset: 1,
-          max_contributor_per_facilitator: null,
-          appriximate_time_per_batch: 0,
-          reviewer_payment_per_microtask: 0,
-          contributor_payment_per_microtask: 0,
-          max_retry_per_task: 0,
-          expected_number_of_total_contributors: 0,
-          max_expected_no_of_contributors: null,
-          max_micro_task_per_contributor: 0,
-          batch: 0,
-          is_dialect_specific: false,
-          maximum_characters_length: 0,
-          minimum_characters_length: 0,
-          reviewer_completion_time_limit: 0,
-          contributor_completion_time_limit: 0,
-          minimum_seconds: 0,
-          maximum_seconds: 0,
-          dialects: [],
-          is_age_specific: false,
-          age: { min: 0, max: 0 },
-          is_sector_specific: false,
-          sector: [],
-          is_gender_specific: false,
-          gender: { male: 0, female: 0 },
-          is_location_specific: false,
-          location: { name: "" },
+  const updateBasicMutation = useUpdateBasicTAsk();
+
+  const handleSubmit = useCallback(async () => {
+    if (validate()) {
+      if (selectedCategory === "basic") {
+        await updateBasicMutation.mutateAsync({
+          id: formData.id,
+          name: formData.name,
+          description: formData.description,
+          task_type_id: formData.task_type_id,
+          language_id: formData.language_id,
+          is_public: formData.is_public,
+          require_contributor_test: formData.require_contributor_test,
+          contributor_completion_time_limit:
+            formData.contributor_completion_time_limit != null
+              ? formData.contributor_completion_time_limit * HOURS_PER_DAY
+              : null,
+          reviewer_completion_time_limit:
+            formData.reviewer_completion_time_limit != null
+              ? formData.reviewer_completion_time_limit * HOURS_PER_DAY
+              : null,
+          max_expected_no_of_contributors:
+            formData.max_expected_no_of_contributors,
         });
         onCancel();
-      } finally {
-        setIsSubmitting(false);
+      } else {
+        await updateTaskMutation.mutateAsync(formData);
       }
     }
-  };
+  }, [validate, updateTaskMutation, updateBasicMutation, formData, selectedCategory, onCancel]);
 
-  const handleNextStep = () => {
-    if (validateStep(step)) {
-      setStep(step + 1);
-    }
-  };
-
-  const handleStepClick = (targetStep: number) => {
-    if (targetStep < step || validateStep(step)) {
-      setStep(targetStep);
-    }
-  };
-
-  const renderStep = () => {
-    if (
-      isLanguageLoading ||
-      isSectorLoading ||
-      isTaskTypeLoading ||
-      regionsLoading
-    ) {
-      return <Loader2 className="animate-spin h-8 w-8 mx-auto mt-4" />;
-    }
-
-    switch (step) {
-      case 1:
-        return (
-          <div className="mb-6 space-y-6">
-            <h3 className="text-lg font-semibold text-gray-800">
-              Task Configuration
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-700">
-                  Maximum  Micro Task assignment per contributors {" "}
-                  <span className="text-red-500">*</span>
-                </label>
-                <ExpandableDescription text="Refers to the maximum number of submission that can be given for a single micro task. This limit helps control the volume of submissions per micro task, ensures fair participation among microtasks, and maintains the quality and manageability of the collected data. Once the specified limit is reached, the system will prevent additional submissions and assignments for that microtask." />
-                <input
-                  required
-                  name="max_contributor_per_micro_task"
-                  type="number"
-                  min="0"
-                  value={formData.max_contributor_per_micro_task ?? ""}
-                  onChange={handleChange}
-                  placeholder="Enter number"
-                  className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                    errors.max_contributor_per_micro_task
-                      ? "border-red-500"
-                      : "border-gray-300"
-                  }`}
-                />
-                {errors.max_contributor_per_micro_task && (
-                  <p className="text-red-500 text-sm">
-                    {errors.max_contributor_per_micro_task}
-                  </p>
-                )}
-              </div>
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-700">
-                  Maximum  contributors assignment per facilitator {" "}
-                  <span className="text-red-500">*</span>
-                </label>
-                <ExpandableDescription text="Refers to the maximum number of contributors that can be assigned to a facilitator for monitoring and follow-up. This limit helps ensure that facilitators can effectively supervise contributors, provide guidance when needed, and maintain the quality and progress of assigned tasks." />
-                <input
-                  required
-                  name="max_contributor_per_facilitator"
-                  type="number"
-                  min="0"
-                  value={formData.max_contributor_per_facilitator ?? ""}
-                  onChange={handleChange}
-                  placeholder="Enter number"
-                  className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                    errors.max_contributor_per_facilitator
-                      ? "border-red-500"
-                      : "border-gray-300"
-                  }`}
-                />
-                {errors.max_contributor_per_facilitator && (
-                  <p className="text-red-500 text-sm">
-                    {errors.max_contributor_per_facilitator}
-                  </p>
-                )}
-              </div>
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-700">
-                  Max dataset per reviewer{" "}
-                  <span className="text-red-500">*</span>
-                </label>
-                <ExpandableDescription text="Refers to the maximum number of submissions or microtasks that can be assigned to a reviewer at a given time. This limit helps balance the review workload among reviewers, prevents overloading a single reviewer, and ensures that submissions are reviewed efficiently and within the expected timeframe." />
-                <input
-                  required
-                  name="max_dataset_per_reviewer"
-                  type="number"
-                  min="0"
-                  value={formData.max_dataset_per_reviewer ?? ""}
-                  onChange={handleChange}
-                  placeholder="Enter number"
-                  className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                    errors.max_dataset_per_reviewer
-                      ? "border-red-500"
-                      : "border-gray-300"
-                  }`}
-                />
-                {errors.max_dataset_per_reviewer && (
-                  <p className="text-red-500 text-sm">
-                    {errors.max_dataset_per_reviewer}
-                  </p>
-                )}
-              </div>
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-700">
-                  Maximum reviewer per dataset{" "}
-                  <span className="text-red-500">*</span>
-                </label>
-                <ExpandableDescription text="Refers to the maximum number of reviewers that can be assigned to review a single dataset submission. This setting helps ensure that each dataset receives the required number of independent reviews for quality assurance, validation, and accuracy before a final decision is made." />
-                <input
-                  required
-                  name="max_reviewer_per_dataset"
-                  type="number"
-                  min="1"
-                  value={formData.max_reviewer_per_dataset ?? ""}
-                  onChange={handleChange}
-                  placeholder="Enter number"
-                  className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                    errors.max_reviewer_per_dataset
-                      ? "border-red-500"
-                      : "border-gray-300"
-                  }`}
-                />
-                {errors.max_reviewer_per_dataset && (
-                  <p className="text-red-500 text-sm">
-                    {errors.max_reviewer_per_dataset}
-                  </p>
-                )}
-              </div>
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-700">
-                  Contributors completion time in hours
-                  <span className="text-red-500">*</span>
-                </label>
-                <ExpandableDescription text="Refers to the maximum amount of time, measured in hours, that contributors are given to complete and submit their work for a microtask after it has been assigned. This setting helps ensure tasks are completed within a defined timeframe and allows the system to manage task availability, deadlines, and reassignment if the task is not completed within the specified period." />
-                <input
-                  name="contributor_completion_time_limit"
-                  type="number"
-                  min="0"
-                  value={formData.contributor_completion_time_limit ?? ""}
-                  onChange={(e) => {
-                    const value = e.target.value;
-                    const numValue = value === "" ? null : Number(value);
-                    // Prevent negative values - allow positive, zero, and null
-                    if (numValue !== null && numValue < 0) {
-                      return;
-                    }
-                    setFormData((prev) => ({
-                      ...prev,
-                      contributor_completion_time_limit: numValue,
-                    }));
-                    setErrors((prev) => ({
-                      ...prev,
-                      contributor_completion_time_limit: "",
-                    }));
-                  }}
-                  placeholder="Enter number"
-                  className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                    errors.contributor_completion_time_limit
-                      ? "border-red-500"
-                      : "border-gray-300"
-                  }`}
-                />
-                {errors.contributor_completion_time_limit && (
-                  <p className="text-red-500 text-sm">
-                    {errors.contributor_completion_time_limit}
-                  </p>
-                )}
-                {errors.contributor_completion_time_limit && (
-                  <p className="text-red-500 text-sm">
-                    {errors.contributor_completion_time_limit}
-                  </p>
-                )}
-              </div>
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-700">
-                  Reviewer Completion time in Hours
-                  <span className="text-red-500">*</span>
-                </label>
-                <ExpandableDescription text="Refers to the maximum amount of time, measured in hours, that reviewers are given to complete and submit their work for a microtask after it has been assigned. This setting helps ensure tasks are completed within a defined timeframe and allows the system to manage task availability, deadlines, and reassignment if the task is not completed within the specified period." />
-                <input
-                  required
-                  name="reviewer_completion_time_limit"
-                  type="number"
-                  min="0"
-                  value={formData.reviewer_completion_time_limit ?? ""}
-                  onChange={(e) => {
-                    const value = e.target.value;
-                    const numValue = value === "" ? null : Number(value);
-                    // Prevent negative values - allow positive, zero, and null
-                    if (numValue !== null && numValue < 0) {
-                      return;
-                    }
-                    setFormData((prev) => ({
-                      ...prev,
-                      reviewer_completion_time_limit: numValue,
-                    }));
-                    setErrors((prev) => ({
-                      ...prev,
-                      reviewer_completion_time_limit: "",
-                    }));
-                  }}
-                  placeholder="Enter number"
-                  className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                    errors.reviewer_completion_time_limit
-                      ? "border-red-500"
-                      : "border-gray-300"
-                  }`}
-                />
-                {errors.reviewer_completion_time_limit && (
-                  <p className="text-red-500 text-sm">
-                    {errors.reviewer_completion_time_limit}
-                  </p>
-                )}
-              </div>
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-700">
-                  Approximate time to finish task {" "}
-                  <span className="text-red-500">*</span>
-                </label>
-                <ExpandableDescription text="Refers to the estimated duration, measured in minutes, that a contributor is expected to spend completing a task." />
-                <input
-                  required
-                  name="appriximate_time_per_batch"
-                  type="number"
-                  min="0"
-                  value={formData.appriximate_time_per_batch ?? ""}
-                  onChange={handleChange}
-                  placeholder="Enter number"
-                  className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                    errors.appriximate_time_per_batch
-                      ? "border-red-500"
-                      : "border-gray-300"
-                  }`}
-                />
-                {errors.appriximate_time_per_batch && (
-                  <p className="text-red-500 text-sm">
-                    {errors.appriximate_time_per_batch}
-                  </p>
-                )}
-              </div>
-              {!isTextAudio && (
-                <>
-                  <div className="space-y-2">
-                    <label className="block text-sm font-medium text-gray-700">
-                      Minimum characters length{" "}
-                      <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      required
-                      name="minimum_characters_length"
-                      type="number"
-                      min="0"
-                      value={formData.minimum_characters_length ?? ""}
-                      onChange={handleChange}
-                      placeholder="Enter number of characters "
-                      className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                        errors.minimum_characters_length
-                          ? "border-red-500"
-                          : "border-gray-300"
-                      }`}
-                    />
-                    {errors.minimum_characters_length && (
-                      <p className="text-red-500 text-sm">
-                        {errors.minimum_characters_length}
-                      </p>
-                    )}
-                  </div>
-                  <div className="space-y-2">
-                    <label className="block text-sm font-medium text-gray-700">
-                      Maximum Characters Length{" "}
-                      <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      required
-                      name="maximum_characters_length"
-                      type="number"
-                      min="0"
-                      value={formData.maximum_characters_length ?? ""}
-                      onChange={handleChange}
-                      placeholder="Enter number of characters "
-                      className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                        errors.maximum_characters_length
-                          ? "border-red-500"
-                          : "border-gray-300"
-                      }`}
-                    />
-                    {errors.maximum_characters_length && (
-                      <p className="text-red-500 text-sm">
-                        {errors.maximum_characters_length}
-                      </p>
-                    )}
-                  </div>
-                </>
-              )}
-              {isTextAudio && (
-                <>
-                  <div className="space-y-2">
-                    <label className="block text-sm font-medium text-gray-700">
-                      Minimum recording length{" "}
-                      <span className="text-red-500">*</span>
-                    </label>
-                    <ExpandableDescription text="Refers to the shortest duration in seconds that an audio dataset or submission must meet to be considered valid for a task." />
-                    <input
-                      required
-                      name="minimum_seconds"
-                      type="number"
-                      min="0"
-                      value={formData.minimum_seconds ?? ""}
-                      onChange={handleChange}
-                      placeholder="Enter seconds"
-                      className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                        errors.minimum_seconds
-                          ? "border-red-500"
-                          : "border-gray-300"
-                      }`}
-                    />
-                    {errors.minimum_seconds && (
-                      <p className="text-red-500 text-sm">
-                        {errors.minimum_seconds}
-                      </p>
-                    )}
-                  </div>
-                  <div className="space-y-2">
-                    <label className="block text-sm font-medium text-gray-700">
-                      Maximum recording seconds{" "}
-                      <span className="text-red-500">*</span>
-                    </label>
-                    <ExpandableDescription text="Refers to the longest duration in seconds that an audio dataset or submission must meet to be considered valid for a task." />
-                    <input
-                      required
-                      name="maximum_seconds"
-                      type="number"
-                      min="0"
-                      value={formData.maximum_seconds ?? ""}
-                      onChange={handleChange}
-                      placeholder="Enter seconds"
-                      className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                        errors.maximum_seconds
-                          ? "border-red-500"
-                          : "border-gray-300"
-                      }`}
-                    />
-                    {errors.maximum_seconds && (
-                      <p className="text-red-500 text-sm">
-                        {errors.maximum_seconds}
-                      </p>
-                    )}
-                  </div>
-                </>
-              )}
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-700">
-                  Maximum retry per mico task <span className="text-red-500">*</span>
-                </label>
-                <ExpandableDescription text="Refers to the maximum number of times a contributor is allowed to resubmit or attempt a single microtask after an initial submission. This limit helps maintain task integrity, prevents excessive retries, and ensures timely progression of work." />
-                <input
-                  name="max_retry_per_task"
-                  type="number"
-                  min="0"
-                  required
-                  value={formData.max_retry_per_task ?? ""}
-                  onChange={handleChange}
-                  placeholder="Enter number"
-                  className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                    errors.max_retry_per_task
-                      ? "border-red-500"
-                      : "border-gray-300"
-                  }`}
-                />
-                {errors.max_retry_per_task && (
-                  <p className="text-red-500 text-sm">
-                    {errors.max_retry_per_task}
-                  </p>
-                )}
-              </div>
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-700">
-                  Maximum expected total contributors
-                </label>
-                <ExpandableDescription text="Refers to the highest number of contributors anticipated or allowed to participate in a task or project. This setting helps plan resource allocation, manage task distribution, and ensure the project can handle the expected workload efficiently." />
-                <input
-                  name="max_expected_no_of_contributors"
-                  type="number"
-                  min="0"
-                  value={formData.max_expected_no_of_contributors ?? ""}
-                  onChange={(e) => {
-                    const value = e.target.value;
-                    const numValue = value === "" ? null : Number(value);
-                    // Prevent negative values - allow positive, zero, and null
-                    if (numValue !== null && numValue < 0) {
-                      return;
-                    }
-                    setFormData((prev) => ({
-                      ...prev,
-                      max_expected_no_of_contributors: numValue,
-                    }));
-                    setErrors((prev) => ({
-                      ...prev,
-                      max_expected_no_of_contributors: "",
-                    }));
-                  }}
-                  placeholder="Enter number"
-                  className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                    errors.max_expected_no_of_contributors
-                      ? "border-red-500"
-                      : "border-gray-300"
-                  }`}
-                />
-                {errors.max_expected_no_of_contributors && (
-                  <p className="text-red-500 text-sm">
-                    {errors.max_expected_no_of_contributors}
-                  </p>
-                )}
-              </div>
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-700">
-                 maximum assignment per contributor{" "}
-                  <span className="text-red-500">*</span>
-                </label>
-                <ExpandableDescription text="Refers to the highest number of microtasks that a single contributor is allowed to work on or submit. This limit helps distribute work fairly among contributors, prevent overloading individuals, and maintain balanced progress across the project." />
-                <input
-                  name="max_micro_task_per_contributor"
-                  type="number"
-                  min="0"
-                  required
-                  value={formData.max_micro_task_per_contributor ?? ""}
-                  onChange={handleChange}
-                  placeholder="Enter number"
-                  className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                    errors.max_micro_task_per_contributor
-                      ? "border-red-500"
-                      : "border-gray-300"
-                  }`}
-                />
-                {errors.max_micro_task_per_contributor && (
-                  <p className="text-red-500 text-sm">
-                    {errors.max_micro_task_per_contributor}
-                  </p>
-                )}
-              </div>
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-700">
-                  Batch size <span className="text-red-500">*</span>
-                </label>
-                <ExpandableDescription text="Refers to the number of submissions a contributor is allowed to submit at one time. This setting helps manage workload, streamline the submission process, and ensure that contributors submit work in manageable groups rather than individually." />
-                <input
-                  name="batch"
-                  type="number"
-                  min="0"
-                  required
-                  value={formData.batch ?? ""}
-                onChange={(e) => {
-                    const value = e.target.value;
-                    const numValue = value === "" ? null : Number(value);
-                    // Prevent negative values - allow positive, zero, and null
-                    if (numValue !== null && numValue < 0) {
-                      return;
-                    }
-                    setFormData((prev) => ({
-                      ...prev,
-                      batch: numValue,
-                    }));
-                    setErrors((prev) => ({
-                      ...prev,
-                      batch: "",
-                    }));
-                  }}
-                  placeholder="Enter number"
-                  className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                    errors.batch ? "border-red-500" : "border-gray-300"
-                  }`}
-                />
-                {errors.batch && (
-                  <p className="text-red-500 text-sm">{errors.batch}</p>
-                )}
-              </div>
-            </div>
-          </div>
-        );
-      case 2:
-        return (
-          <div className="mb-6 space-y-6">
-            <h3 className="text-lg font-semibold text-gray-800">
-              Contributor Requirements
-            </h3>
-            <div className="space-y-6">
-              <div className="bg-white p-4 rounded-lg border border-gray-100 ">
-                <div>
-                  <label className="block text-sm font-semibold text-gray-800 mb-3">
-                    Dialect Specific <span className="text-red-500">*</span>
-                  </label>
-                  <div className="flex items-center space-x-6">
-                    <label className="flex items-center cursor-pointer">
-                      <input
-                        type="radio"
-                        name="is_dialect_specific"
-                        value="true"
-                        checked={formData.is_dialect_specific === true}
-                        onChange={() =>
-                          setFormData({
-                            ...formData,
-                            is_dialect_specific: true,
-                          })
-                        }
-                        className="h-4 w-4 text-primary border-gray-300 focus:ring-blue-500"
-                      />
-                      <span className="ml-2 text-sm text-gray-700">Yes</span>
-                    </label>
-                    <label className="flex items-center cursor-pointer">
-                      <input
-                        type="radio"
-                        name="is_dialect_specific"
-                        value="false"
-                        checked={formData.is_dialect_specific === false}
-                        onChange={() =>
-                          setFormData({
-                            ...formData,
-                            is_dialect_specific: false,
-                            dialects: [],
-                          })
-                        }
-                        className="h-4 w-4 text-primary border-gray-300 focus:ring-blue-500"
-                      />
-                      <span className="ml-2 text-sm text-gray-700">No</span>
-                    </label>
-                  </div>
-                </div>
-                {formData.is_dialect_specific && task.language_id && (
-                  <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
-                    <label className="block text-sm font-semibold text-gray-800 mb-2">
-                      Select Dialects <span className="text-red-500">*</span>
-                    </label>
-                    {dialectResponseData?.data?.length ? (
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 max-h-48 overflow-y-auto">
-                        {dialectResponseData.data.map(
-                          (dialect: { id: string; name: string }) => (
-                            <label
-                              key={dialect.id}
-                              className="flex items-center space-x-2 p-2 bg-white rounded border border-gray-100 hover:bg-blue-50 cursor-pointer"
-                            >
-                              <input
-                                type="checkbox"
-                                checked={formData.dialects.some(
-                                  (d) => d.id === dialect.id
-                                )}
-                                onChange={() => handleDialectToggle(dialect.id)}
-                                className="h-4 w-4 text-primary border-gray-300 rounded focus:ring-blue-500"
-                              />
-                              <span className="text-sm text-gray-700">
-                                {dialect.name}
-                              </span>
-                            </label>
-                          )
-                        )}
-                      </div>
-                    ) : (
-                      <p className="text-sm text-gray-500">
-                        No dialects available for this language
-                      </p>
-                    )}
-                    {errors.dialects && (
-                      <p className="text-red-500 text-sm mt-2">
-                        {errors.dialects}
-                      </p>
-                    )}
-                  </div>
-                )}
-                {formData.is_dialect_specific && !task.language_id && (
-                  <p className="text-red-500 text-sm mt-2">
-                    No language selected for this task. Please select a language
-                    to view dialects.
-                  </p>
-                )}
-              </div>
-              <div className="bg-white p-4 rounded-lg border border-gray-100 ">
-                <div>
-                  <label className="block text-sm font-semibold text-gray-800 mb-3">
-                    Gender Specific <span className="text-red-500">*</span>
-                  </label>
-                  <div className="flex items-center space-x-6">
-                    <label className="flex items-center cursor-pointer">
-                      <input
-                        type="radio"
-                        name="is_gender_specific"
-                        value="true"
-                        checked={formData.is_gender_specific === true}
-                        onChange={() =>
-                          setFormData({ ...formData, is_gender_specific: true })
-                        }
-                        className="h-4 w-4 text-primary border-gray-300 focus:ring-blue-500"
-                      />
-                      <span className="ml-2 text-sm text-gray-700">Yes</span>
-                    </label>
-                    <label className="flex items-center cursor-pointer">
-                      <input
-                        type="radio"
-                        name="is_gender_specific"
-                        value="false"
-                        checked={formData.is_gender_specific === false}
-                        onChange={() =>
-                          setFormData({
-                            ...formData,
-                            is_gender_specific: false,
-                          })
-                        }
-                        className="h-4 w-4 text-primary border-gray-300 focus:ring-blue-500"
-                      />
-                      <span className="ml-2 text-sm text-gray-700">No</span>
-                    </label>
-                  </div>
-                </div>
-                {formData.is_gender_specific && (
-                  <div className="mt-3 p-4 bg-gray-50 rounded-lg border border-gray-100">
-                    <div className="mb-4">
-                      <div className="flex items-center space-x-8 mb-4">
-                        <label className="flex items-center">
-                          <input
-                            type="radio"
-                            name="gender"
-                            value="Male"
-                            checked={formData.gender.male === 100}
-                            onChange={handleGenderChange}
-                            className="h-4 w-4 text-primary border-gray-300 focus:ring-blue-500"
-                          />
-                          <span className="ml-2 text-sm text-gray-700">
-                            Male
-                          </span>
-                        </label>
-                        <label className="flex items-center">
-                          <input
-                            type="radio"
-                            name="gender"
-                            value="Female"
-                            checked={formData.gender.female === 100}
-                            onChange={handleGenderChange}
-                            className="h-4 w-4 text-primary border-gray-300 focus:ring-blue-500"
-                          />
-                          <span className="ml-2 text-sm text-gray-700">
-                            Female
-                          </span>
-                        </label>
-                      </div>
-                    </div>
-                    <div className="flex items-center space-x-4">
-                      <div className="flex items-center space-x-2">
-                        <svg
-                          width="24"
-                          height="24"
-                          viewBox="0 0 31 32"
-                          fill="none"
-                          xmlns="http://www.w3.org/2000/svg"
-                        >
-                          <g clipPath="url(#clip0_1311_10918)">
-                            <path
-                              d="M11.1597 29.6402C11.1597 30.4047 11.6358 30.8802 12.3997 30.8802C13.1654 30.8802 13.6397 30.4047 13.6397 29.6402V17.8602H14.8797V29.6402C14.8797 30.4034 15.3552 30.8802 16.1197 30.8802C16.8841 30.8802 17.3597 30.4047 17.3597 29.6402V9.8002H17.9797V17.1249C17.9797 18.6098 19.8434 18.6098 19.8397 17.1249V9.59002C19.8397 7.9495 18.658 6.7002 16.7397 6.7002H11.7797C10.0313 6.7002 8.67969 7.76598 8.67969 9.54414V17.2402C8.67969 18.4802 10.5397 18.4802 10.5397 17.2402V9.8002H11.1597V29.6402Z"
-                              fill="#2563EB"
-                            />
-                            <path
-                              d="M14.1825 5.92481C15.595 5.92481 16.74 4.77978 16.74 3.36731C16.74 1.95485 15.595 0.809814 14.1825 0.809814C12.77 0.809814 11.625 1.95485 11.625 3.36731C11.625 4.77978 12.77 5.92481 14.1825 5.92481Z"
-                              fill="#2563EB"
-                            />
-                          </g>
-                          <defs>
-                            <clipPath id="clip0_1311_10918">
-                              <rect
-                                width="31"
-                                height="31"
-                                fill="white"
-                                transform="translate(0 0.5)"
-                              />
-                            </clipPath>
-                          </defs>
-                        </svg>
-                        <span className="text-sm text-gray-700">
-                          Male {formData.gender?.male}%
-                        </span>
-                      </div>
-                      <input
-                        type="range"
-                        min="0"
-                        max="100"
-                        value={formData.gender?.male || 0}
-                        onChange={handleGenderPercentage}
-                        className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-                      />
-                      <div className="flex items-center space-x-2">
-                        <svg
-                          width="24"
-                          height="24"
-                          viewBox="0 0 31 32"
-                          fill="none"
-                          xmlns="http://www.w3.org/2000/svg"
-                        >
-                          <g clipPath="url(#clip0_1311_10931)">
-                            <path
-                              d="M14.1825 5.92506C15.595 5.92506 16.74 4.78003 16.74 3.36756C16.74 1.95509 15.595 0.810059 14.1825 0.810059C12.77 0.810059 11.625 1.95509 11.625 3.36756C11.625 4.78003 12.77 5.92506 14.1825 5.92506Z"
-                              fill="#2563EB"
-                            />
-                            <path
-                              d="M20.4059 20.34L16.7424 10.273L16.7213 10.1695C16.7213 10.0225 16.8447 9.90349 16.9984 9.90349C17.1292 9.90349 17.239 9.99091 17.2681 10.1075L19.7587 16.62C19.9242 16.9926 20.605 17.24 21.0526 17.24C21.6509 17.24 21.7129 16.0651 21.6999 16L19.2093 9.57861C18.993 8.13959 17.5397 6.69995 15.8812 6.69995H12.6355C10.977 6.69995 9.41582 8.13959 9.19944 9.57861L6.8205 16C6.76656 16.1233 6.8205 17.24 7.46716 17.24C7.96998 17.24 8.63896 17.0645 8.7611 16.62L11.1636 10.0796C11.1843 10.0274 11.2203 9.98261 11.2669 9.95119C11.3135 9.91978 11.3684 9.90315 11.4246 9.90349C11.5778 9.90349 11.7011 10.0225 11.7011 10.1689L11.6838 10.2637L8.11444 20.34C8.10762 20.3697 8.11444 20.9296 8.11444 20.96C8.11444 21.1745 8.63214 21.58 8.8572 21.58H11.1599V29.6989C11.1599 30.3437 11.7278 30.88 12.3999 30.88C13.072 30.88 13.6399 30.343 13.6399 29.6989V21.5744C13.6399 21.3989 14.8799 21.4045 14.8799 21.58V29.64C14.8799 30.2848 15.4484 30.88 16.1199 30.88C16.7932 30.88 17.3599 30.2841 17.3599 29.64V21.58H19.7587C19.9831 21.58 20.4059 21.1745 20.4059 20.96C20.4059 20.9104 20.4239 20.3827 20.4059 20.34Z"
-                              fill="#2563EB"
-                            />
-                          </g>
-                          <defs>
-                            <clipPath id="clip0_1311_10931">
-                              <rect
-                                width="31"
-                                height="31"
-                                fill="white"
-                                transform="translate(0 0.5)"
-                              />
-                            </clipPath>
-                          </defs>
-                        </svg>
-                        <span className="text-sm text-gray-700">
-                          Female {formData.gender?.female}%
-                        </span>
-                      </div>
-                    </div>
-                    {errors.gender && (
-                      <p className="text-red-500 text-sm mt-2">
-                        {errors.gender}
-                      </p>
-                    )}
-                  </div>
-                )}
-              </div>
-              <div className="bg-white p-4 rounded-lg border border-gray-100 ">
-                <div>
-                  <label className="block text-sm font-semibold text-gray-800 mb-3">
-                    Age Specific <span className="text-red-500">*</span>
-                  </label>
-                  <div className="flex items-center space-x-6">
-                    <label className="flex items-center cursor-pointer">
-                      <input
-                        type="radio"
-                        name="is_age_specific"
-                        value="true"
-                        checked={formData.is_age_specific === true}
-                        onChange={() =>
-                          setFormData({ 
-                            ...formData, 
-                            is_age_specific: true,
-                            age: formData.age || { min: null, max: null }
-                          })
-                        }
-                        className="h-4 w-4 text-primary border-gray-300 focus:ring-blue-500"
-                      />
-                      <span className="ml-2 text-sm text-gray-700">Yes</span>
-                    </label>
-                    <label className="flex items-center cursor-pointer">
-                      <input
-                        type="radio"
-                        name="is_age_specific"
-                        value="false"
-                        checked={formData.is_age_specific === false}
-                        onChange={() =>
-                          setFormData({ ...formData, is_age_specific: false })
-                        }
-                        className="h-4 w-4 text-primary border-gray-300 focus:ring-blue-500"
-                      />
-                      <span className="ml-2 text-sm text-gray-700">No</span>
-                    </label>
-                  </div>
-                </div>
-                {formData.is_age_specific && (
-                  <div className="mt-3 p-4 rounded-lg border border-gray-100">
-                    <label className="block text-sm font-semibold text-gray-800 mb-3">
-                      Age Range
-                    </label>
-                    <div className="flex items-center space-x-6">
-                      <div className="flex-1">
-                        <label className="block text-xs font-medium text-gray-600 mb-2">
-                          Minimum Age
-                        </label>
-                        <input
-                          type="number"
-                          min="0"
-                          value={formData.age?.min ?? ""}
-                          onChange={(e) =>
-                            handleNestedChange(
-                              "age",
-                              "min",
-                              e.target.value === "" ? null : Number(e.target.value)
-                            )
-                          }
-                          className={`w-full p-3 border-2 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200 ${
-                            errors.age
-                              ? "border-red-500 bg-red-50"
-                              : "border-gray-300 hover:border-green-400"
-                          }`}
-                          placeholder=""
-                        />
-                      </div>
-                      <div className="flex items-center justify-center px-2">
-                        <span className="text-gray-400 font-medium">to</span>
-                      </div>
-                      <div className="flex-1">
-                        <label className="block text-xs font-medium text-gray-600 mb-2">
-                          Maximum Age
-                        </label>
-                        <input
-                          type="number"
-                          min="0"
-                          value={formData.age?.max ?? ""}
-                          onChange={(e) =>
-                            handleNestedChange(
-                              "age",
-                              "max",
-                              e.target.value === "" ? null : Number(e.target.value)
-                            )
-                          }
-                          className={`w-full p-3 border-2 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200 ${
-                            errors.age
-                              ? "border-red-500 bg-red-50"
-                              : "border-gray-300 hover:border-green-400"
-                          }`}
-                          placeholder=""
-                        />
-                      </div>
-                    </div>
-                    {errors.age && (
-                      <p className="text-red-500 text-sm mt-3 flex items-center">
-                        <span className="mr-1">⚠️</span>
-                        {errors.age}
-                      </p>
-                    )}
-                  </div>
-                )}
-              </div>
-              <div className="bg-white p-4 rounded-lg border border-gray-100 ">
-                <div>
-                  <label className="block text-sm font-semibold text-gray-800 mb-3">
-                    Sector Specific <span className="text-red-500">*</span>
-                  </label>
-                  <div className="flex items-center space-x-6">
-                    <label className="flex items-center cursor-pointer">
-                      <input
-                        type="radio"
-                        name="is_sector_specific"
-                        value="true"
-                        checked={formData.is_sector_specific === true}
-                        onChange={() =>
-                          setFormData({ ...formData, is_sector_specific: true })
-                        }
-                        className="h-4 w-4 text-primary border-gray-300 focus:ring-blue-500"
-                      />
-                      <span className="ml-2 text-sm text-gray-700">Yes</span>
-                    </label>
-                    <label className="flex items-center cursor-pointer">
-                      <input
-                        type="radio"
-                        name="is_sector_specific"
-                        value="false"
-                        checked={formData.is_sector_specific === false}
-                        onChange={() =>
-                          setFormData({
-                            ...formData,
-                            is_sector_specific: false,
-                            sector: [],
-                          })
-                        }
-                        className="h-4 w-4 text-primary border-gray-300 focus:ring-blue-500"
-                      />
-                      <span className="ml-2 text-sm text-gray-700">No</span>
-                    </label>
-                  </div>
-                </div>
-                {formData.is_sector_specific && (
-                  <div className="mt-3 p-4 rounded-lg border w-2/4 border-gray-100">
-                    <label className="block m-3 text-sm font-semibold text-gray-800 mb-3">
-                      Select Sectors <span className="text-red-500">*</span>
-                    </label>
-                    <select
-                      name="sector"
-                      multiple
-                      value={formData.sector.map((s) => s.id)}
-                      onChange={(e) => {
-                        const selectedOptions = Array.from(
-                          e.target.selectedOptions
-                        ).map((option) => option.value);
-                        setFormData((prev) => ({
-                          ...prev,
-                          sector: selectedOptions.map((id) => ({ id })),
-                        }));
-                        setErrors((prev) => ({ ...prev, sector: "" }));
-                      }}
-                      className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                        errors.sector ? "border-red-500" : "border-gray-300"
-                      }`}
-                      style={{ minHeight: "100px", maxHeight: "150px" }}
-                    >
-                      {sectorOptions.map(
-                        (sector: { id: string; name: string }) => (
-                          <option
-                            className="px-3 m-1 py-2 border border-gray-100 rounded-xl"
-                            key={sector.id}
-                            value={sector.id}
-                          >
-                            {sector.name}
-                          </option>
-                        )
-                      )}
-                    </select>
-                    <p className="text-xs text-gray-500 mt-2">
-                      Hold Ctrl/Cmd to select multiple sectors
-                    </p>
-                    {errors.sector && (
-                      <p className="text-red-500 text-sm mt-2">
-                        {errors.sector}
-                      </p>
-                    )}
-                  </div>
-                )}
-              </div>
-              <div className="bg-white p-4 rounded-lg border border-gray-100 ">
-                <div>
-                  <label className="block text-sm font-semibold text-gray-800 mb-3">
-                    Location Specific <span className="text-red-500">*</span>
-                  </label>
-                  <div className="flex items-center space-x-6">
-                    <label className="flex items-center cursor-pointer">
-                      <input
-                        type="radio"
-                        name="is_location_specific"
-                        value="true"
-                        checked={formData.is_location_specific === true}
-                        onChange={() =>
-                          setFormData({
-                            ...formData,
-                            is_location_specific: true,
-                          })
-                        }
-                        className="h-4 w-4 text-primary border-gray-300 focus:ring-blue-500"
-                      />
-                      <span className="ml-2 text-sm text-gray-700">Yes</span>
-                    </label>
-                    <label className="flex items-center cursor-pointer">
-                      <input
-                        type="radio"
-                        name="is_location_specific"
-                        value="false"
-                        checked={formData.is_location_specific === false}
-                        onChange={() =>
-                          setFormData({
-                            ...formData,
-                            is_location_specific: false,
-                            location: { name: "" },
-                          })
-                        }
-                        className="h-4 w-4 text-primary border-gray-300 focus:ring-blue-500"
-                      />
-                      <span className="ml-2 text-sm text-gray-700">No</span>
-                    </label>
-                  </div>
-                </div>
-                {formData.is_location_specific && (
-                  <div className="mt-3 p-4 bg-orange-50 rounded-lg border border-orange-200">
-                    <label className="block text-sm font-semibold text-gray-800 mb-3">
-                      Location Name <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.location.name}
-                      onChange={(e) =>
-                        handleArrayChange("location", e.target.value)
-                      }
-                      placeholder="Enter location name (e.g., New York, London, Tokyo)"
-                      className={`w-full p-4 border-2 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-200 bg-white ${
-                        errors.location
-                          ? "border-red-500 bg-red-50"
-                          : "border-gray-300 hover:border-orange-400"
-                      }`}
-                    />
-                    {errors.location && (
-                      <p className="text-red-500 text-sm mt-2 flex items-center">
-                        <span className="mr-1">⚠️</span>
-                        {errors.location}
-                      </p>
-                    )}
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        );
-      default:
-        return null;
-    }
-  };
+  // ── Guards ─────────────────────────────────────────────────────────────────
 
   if (!session?.access_token) {
     return (
@@ -1571,108 +696,521 @@ const UpdateTask: React.FC<UpdateTaskFormProps> = ({ task, onCancel }) => {
     );
   }
 
-  return (
-    <div className="p-6">
-      <button
-        onClick={onCancel}
-        className="flex items-center gap-2 mb-4 px-3 py-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-md transition-colors"
-      >
-        <svg
-          width="20"
-          height="20"
-          viewBox="0 0 20 20"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <path
-            d="M12.5 5L7.5 10L12.5 15"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
-        <span className="text-sm font-medium">  Back</span>
-      </button>
-      <h2 className="mt-3 mb-8 text-2xl font-semibold text-gray-800">
-        Update Task
-      </h2>
-      <div className="flex items-center mb-8">
-        <div className="flex-1 flex items-center space-x-4">
-          <div className="flex items-center">
-            <button
-              onClick={() => handleStepClick(1)}
-              className={`w-10 h-10 flex items-center justify-center rounded-full text-white font-bold transition-colors ${
-                step >= 1
-                  ? "bg-green-500 hover:bg-green-600"
-                  : "bg-blue-500 hover:bg-blue-600"
-              }`}
-            >
-              1
-            </button>
-            <span className="ml-2 text-sm text-gray-600">Task Configuration</span>
-          </div>
-          <div
-            className={`h-1 w-24 ${step >= 2 ? "bg-green-500" : "bg-blue-500"}`}
-          />
-          <div className="flex items-center">
-            <button
-              onClick={() => handleStepClick(2)}
-              className={`w-10 h-10 flex items-center justify-center rounded-full text-white font-bold transition-colors ${
-                step >= 2
-                  ? "bg-green-500 hover:bg-green-600"
-                  : "bg-blue-500 hover:bg-blue-600"
-              }`}
-            >
-              2
-            </button>
-            <span className="ml-2 text-sm text-gray-600">
-            Contributor Requirements
-            </span>
-          </div>
-        </div>
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center p-10">
+        <Loader2 className="animate-spin text-gray-400 w-6 h-6" />
       </div>
-      {renderStep()}
-      <div className="flex justify-end gap-4 mt-8">
-        {step >= 1 && (
-          <Button
-            onClick={() => onCancel()}
-            className="bg-white border border-blue-500 text-blue-500 hover:bg-blue-50 transition-colors"
-            disabled={isSubmitting}
+    );
+  }
+
+  // ── Render helpers ─────────────────────────────────────────────────────────
+
+  const numericInput = (
+    name: keyof UpdateTaskFormState,
+    label: string,
+    opts: { description?: string; allowNull?: boolean } = {},
+  ) => (
+    <Field label={label} error={errors[name]} description={opts.description}>
+      <input
+        id={name}
+        type="number"
+        name={name}
+        min={0}
+        value={
+          formData[name] === null || formData[name] === undefined
+            ? ""
+            : String(formData[name])
+        }
+        onChange={handleChange}
+        className={`border rounded px-3 py-2 text-sm w-full focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+          errors[name] ? "border-red-400" : "border-gray-300"
+        }`}
+      />
+    </Field>
+  );
+
+  const toggle = (name: keyof UpdateTaskFormState, label: string) => (
+    <label className="flex items-center gap-2 cursor-pointer select-none">
+      <input
+        type="checkbox"
+        name={name}
+        checked={!!formData[name]}
+        onChange={handleChange}
+        className="w-4 h-4 accent-blue-600"
+      />
+      <span className="text-sm text-gray-700">{label}</span>
+    </label>
+  );
+
+  // ── Section renderers ──────────────────────────────────────────────────────
+
+  const renderBasic = () => (
+    <div className="flex flex-col gap-5">
+      <Field label="Task Name" error={errors.name}>
+        <input
+          type="text"
+          name="name"
+          value={formData.name}
+          onChange={handleChange}
+          placeholder="Enter task name"
+          className={`border rounded px-3 py-2 text-sm w-full focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+            errors.name ? "border-red-400" : "border-gray-300"
+          }`}
+        />
+      </Field>
+
+      <Field label="Description">
+        <textarea
+          name="description"
+          value={formData.description}
+          onChange={handleChange}
+          placeholder="Enter description"
+          rows={3}
+          className="border border-gray-300 rounded px-3 py-2 text-sm w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+      </Field>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+        <Field label="Task Type" error={errors.task_type_id}>
+          <select
+            name="task_type_id"
+            value={formData.task_type_id}
+            onChange={handleChange}
+            className={`border rounded px-3 py-2 text-sm w-full focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+              errors.task_type_id ? "border-red-400" : "border-gray-300"
+            }`}
           >
-            Back
-          </Button>
+            <option value="">Select task type</option>
+            {taskTypeOptions.map((t: { id: string; name: string }) => (
+              <option key={t.id} value={t.id}>
+                {t.name}
+              </option>
+            ))}
+          </select>
+        </Field>
+
+        <Field label="Language" error={errors.language_id}>
+          <select
+            name="language_id"
+            value={formData.language_id}
+            onChange={handleChange}
+            className={`border rounded px-3 py-2 text-sm w-full focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+              errors.language_id ? "border-red-400" : "border-gray-300"
+            }`}
+          >
+            <option value="">Select language</option>
+            {languageOptions.map((l: { id: string; name: string }) => (
+              <option key={l.id} value={l.id}>
+                {l.name}
+              </option>
+            ))}
+          </select>
+        </Field>
+
+        {numericInput(
+          "contributor_completion_time_limit",
+          "Contributor completion time limit (days)",
+          {
+            description:
+              "Maximum number of days contributors have to complete a microtask after assignment.",
+          },
         )}
-        {step < 2 && (
-          <Button
-            onClick={handleNextStep}
-            className="bg-blue-500 text-white hover:bg-blue-600 transition-colors"
-            disabled={isSubmitting}
-          >
-            Continue
-          </Button>
+
+        {numericInput(
+          "reviewer_completion_time_limit",
+          "Reviewer completion time limit (days)",
+          {
+            description:
+              "Maximum number of days reviewers have to complete a review after assignment.",
+          },
         )}
-        {step === 2 && (
-          <Button
-            onClick={handleSubmit}
-            className="bg-blue-500 text-white hover:bg-blue-600 transition-colors"
-            disabled={isSubmitting}
-          >
-            {isSubmitting ? (
-              <Loader2 className="animate-spin h-5 w-5 mr-2" />
-            ) : (
-              "Update Task"
+
+        {numericInput(
+          "max_expected_no_of_contributors",
+          "Maximum expected total contributors",
+          {
+            description:
+              "The highest number of contributors anticipated or allowed to participate in this task.",
+          },
+        )}
+      </div>
+
+      <div className="flex flex-col gap-3 pt-2">
+        {toggle("is_public", "Public (any contributor can join)")}
+        {toggle("require_contributor_test", "Require contributor test")}
+      </div>
+    </div>
+  );
+
+  const renderDemographics = () => (
+    <div className="flex flex-col gap-6">
+      {/* Dialect */}
+      <div className="flex flex-col gap-3">
+        {toggle("is_dialect_specific", "Dialect-specific task")}
+        {formData.is_dialect_specific && (
+          <div className="flex flex-col gap-1">
+            <p className="text-sm font-medium text-gray-700">Select Dialects</p>
+            <div className="flex flex-wrap gap-2 mt-1">
+              {dialectOptions.map((d: DialectOption) => (
+                <button
+                  key={d.id}
+                  type="button"
+                  onClick={() => handleDialectToggle(d.id)}
+                  className={`px-3 py-1 rounded-full text-xs border transition-colors ${
+                    formData.dialects.some((sel) => sel.id === d.id)
+                      ? "bg-blue-600 text-white border-blue-600"
+                      : "bg-white text-gray-700 border-gray-300 hover:border-blue-400"
+                  }`}
+                >
+                  {d.name}
+                </button>
+              ))}
+            </div>
+            {errors.dialects && (
+              <p className="text-xs text-red-500">{errors.dialects}</p>
             )}
-          </Button>
+          </div>
         )}
-        {step === 2 && (
-          <Button
-            className="bg-white border border-blue-500 text-blue-500 hover:bg-blue-50 transition-colors"
-            disabled={isSubmitting}
-          >
-            Cancel
-          </Button>
+      </div>
+
+      {/* Age */}
+      <div className="flex flex-col gap-3">
+        {toggle("is_age_specific", "Age-specific task")}
+        {formData.is_age_specific && (
+          <div className="flex gap-4">
+            <Field label="Min Age" error={errors.age}>
+              <input
+                type="number"
+                min={1}
+                value={formData.age?.min ?? ""}
+                onChange={(e) =>
+                  handleNestedChange(
+                    "age",
+                    "min",
+                    e.target.value === "" ? null : Number(e.target.value),
+                  )
+                }
+                className="border border-gray-300 rounded px-3 py-2 text-sm w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </Field>
+            <Field label="Max Age">
+              <input
+                type="number"
+                min={1}
+                value={formData.age?.max ?? ""}
+                onChange={(e) =>
+                  handleNestedChange(
+                    "age",
+                    "max",
+                    e.target.value === "" ? null : Number(e.target.value),
+                  )
+                }
+                className="border border-gray-300 rounded px-3 py-2 text-sm w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </Field>
+          </div>
         )}
+      </div>
+
+      {/* Gender */}
+      <div className="flex flex-col gap-3">
+        {toggle("is_gender_specific", "Gender-specific task")}
+        {formData.is_gender_specific && (
+          <div className="flex flex-col gap-2">
+            <div className="flex gap-6">
+              {["Male", "Female"].map((g) => (
+                <label
+                  key={g}
+                  className="flex items-center gap-2 cursor-pointer text-sm"
+                >
+                  <input
+                    type="radio"
+                    name="genderSelect"
+                    value={g}
+                    checked={
+                      g === "Male"
+                        ? formData.gender.male === 100
+                        : formData.gender.female === 100
+                    }
+                    onChange={handleGenderChange}
+                    className="accent-blue-600"
+                  />
+                  {g}
+                </label>
+              ))}
+              <label className="flex items-center gap-2 cursor-pointer text-sm">
+                <input
+                  type="radio"
+                  name="genderSelect"
+                  value="Both"
+                  checked={
+                    formData.gender.male > 0 && formData.gender.female > 0
+                  }
+                  onChange={() => {
+                    setFormData((prev) => ({
+                      ...prev,
+                      gender: { male: 50, female: 50 },
+                    }));
+                    clearError("gender");
+                  }}
+                  className="accent-blue-600"
+                />
+                Both
+              </label>
+            </div>
+
+            {formData.gender.male > 0 && formData.gender.female > 0 && (
+              <div className="flex flex-col gap-1">
+                <p className="text-xs text-gray-500">
+                  Male: {formData.gender.male}% / Female:{" "}
+                  {formData.gender.female}%
+                </p>
+                <input
+                  type="range"
+                  min={0}
+                  max={100}
+                  value={formData.gender.male}
+                  onChange={handleGenderPercentage}
+                  className="w-full accent-blue-600"
+                />
+              </div>
+            )}
+            {errors.gender && (
+              <p className="text-xs text-red-500">{errors.gender}</p>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
+  const renderLocation = () => (
+    <div className="flex flex-col gap-6">
+      {/* Sector */}
+      <div className="flex flex-col gap-3">
+        {toggle("is_sector_specific", "Sector-specific task")}
+        {formData.is_sector_specific && (
+          <div className="flex flex-col gap-1">
+            <p className="text-sm font-medium text-gray-700">Select Sectors</p>
+            <div className="flex flex-wrap gap-2 mt-1">
+              {sectorOptions.map((s: { id: string; name: string }) => (
+                <button
+                  key={s.id}
+                  type="button"
+                  onClick={() => handleSectorToggle(s.name)}
+                  className={`px-3 py-1 rounded-full text-xs border transition-colors ${
+                    formData.sectors.includes(s.name)
+                      ? "bg-blue-600 text-white border-blue-600"
+                      : "bg-white text-gray-700 border-gray-300 hover:border-blue-400"
+                  }`}
+                >
+                  {s.name}
+                </button>
+              ))}
+            </div>
+            {errors.sectors && (
+              <p className="text-xs text-red-500">{errors.sectors}</p>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Location */}
+      <div className="flex flex-col gap-3">
+        {toggle("is_location_specific", "Location-specific task")}
+        {formData.is_location_specific && (
+          <Field label="Location" error={errors.locations}>
+            <input
+              type="text"
+              value={formData.locations.join(", ")}
+              onChange={(e) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  locations: e.target.value
+                    .split(",")
+                    .map((l) => l.trim())
+                    .filter(Boolean),
+                }))
+              }
+              placeholder="Enter locations, comma-separated"
+              className={`border rounded px-3 py-2 text-sm w-full focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                errors.locations ? "border-red-400" : "border-gray-300"
+              }`}
+            />
+          </Field>
+        )}
+      </div>
+    </div>
+  );
+
+  const renderConfiguration = () => (
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+      {numericInput(
+        "max_contributor_per_micro_task",
+        "Maximum submission per microtask",
+        {
+          description:
+            "Refers to the maximum number of submission that can be given for a single micro task. This limit helps control the volume of submissions per micro task, ensures fair participation among microtasks, and maintains the quality and manageability of the collected data. Once the specified limit is reached, the system will prevent additional submissions and assignments for that microtask.",
+        },
+      )}
+      {numericInput(
+        "max_contributor_per_facilitator",
+        "Maximum contributors assignment per facilitator",
+        {
+          description:
+            "Refers to the maximum number of contributors that can be assigned to a facilitator for monitoring and follow-up. This limit helps ensure that facilitators can effectively supervise contributors, provide guidance when needed, and maintain the quality and progress of assigned tasks.",
+        },
+      )}
+      {numericInput(
+        "max_dataset_per_reviewer",
+        "Maximum assignment per reviewer",
+        {
+          description:
+            "Refers to the maximum number of submissions or microtasks that can be assigned to a reviewer at a given time. This limit helps balance the review workload among reviewers, prevents overloading a single reviewer, and ensures that submissions are reviewed efficiently and within the expected timeframe.",
+        },
+      )}
+      {numericInput(
+        "max_reviewer_per_dataset",
+        "Maximum reviewer per dataset",
+        {
+          description:
+            "Refers to the maximum number of reviewers that can be assigned to review a single dataset submission. This setting helps ensure that each dataset receives the required number of independent reviews for quality assurance, validation, and accuracy before a final decision is made.",
+        },
+      )}
+      {numericInput(
+        "max_micro_task_per_contributor",
+        "Maximum microtasks per contributor",
+        {
+          description:
+            "Refers to the highest number of microtasks that a single contributor is allowed to work on or submit. This limit helps distribute work fairly among contributors, prevent overloading individuals, and maintain balanced progress across the project.",
+        },
+      )}
+      {numericInput("batch", "Batch Size")}
+      {numericInput(
+        "appriximate_time_per_batch",
+        "Approximate time to finish task (min)",
+        {
+          description:
+            "Refers to the estimated duration, measured in minutes, that a contributor is expected to spend completing a task.",
+        },
+      )}
+      {numericInput(
+        "contributor_completion_time_limit",
+        "Contributor completion time limit (days)",
+        {
+          description:
+            "Refers to the maximum amount of time, measured in days, that contributors are given to complete and submit their work for a microtask after it has been assigned. This setting helps ensure tasks are completed within a defined timeframe and allows the system to manage task availability, deadlines, and reassignment if the task is not completed within the specified period.",
+        },
+      )}
+      {numericInput(
+        "reviewer_completion_time_limit",
+        "Reviewer completion time limit (days)",
+        {
+          description:
+            "Refers to the maximum amount of time, measured in days, that reviewers are given to complete and submit their work for a microtask after it has been assigned. This setting helps ensure tasks are completed within a defined timeframe and allows the system to manage task availability, deadlines, and reassignment if the task is not completed within the specified period.",
+        },
+      )}
+      {numericInput("max_retry_per_task", "Maximum retry per microtask", {
+        description:
+          "Refers to the maximum number of times a contributor is allowed to resubmit or attempt a single microtask after an initial submission. This limit helps maintain task integrity, prevents excessive retries, and ensures timely progression of work.",
+      })}
+      {numericInput(
+        "expected_number_of_total_contributors",
+        "Expected Total Contributors",
+      )}
+      {numericInput(
+        "max_expected_no_of_contributors",
+        "Maximum expected total contributors",
+        {
+          description:
+            "Refers to the highest number of contributors anticipated or allowed to participate in a task or project. This setting helps plan resource allocation, manage task distribution, and ensure the project can handle the expected workload efficiently.",
+        },
+      )}
+      {isTextAudio ? (
+        <>
+          {numericInput(
+            "minimum_seconds",
+            "Minimum recording length (seconds)",
+            {
+              description:
+                "Refers to the shortest duration in seconds that an audio dataset or submission must meet to be considered valid for a task.",
+            },
+          )}
+          {numericInput(
+            "maximum_seconds",
+            "Maximum recording length (seconds)",
+            {
+              description:
+                "Refers to the longest duration in seconds that an audio dataset or submission must meet to be considered valid for a task.",
+            },
+          )}
+        </>
+      ) : (
+        <>
+          {numericInput(
+            "minimum_characters_length",
+            "Minimum characters length",
+          )}
+          {numericInput(
+            "maximum_characters_length",
+            "Maximum characters length",
+          )}
+        </>
+      )}
+    </div>
+  );
+
+  // ── Active category label ──────────────────────────────────────────────────
+
+  const activeCategory = CATEGORIES.find((c) => c.key === selectedCategory);
+
+  // ── JSX ────────────────────────────────────────────────────────────────────
+
+  return (
+    <div className="flex flex-col gap-6 p-6 bg-white rounded-lg">
+      {/* Header */}
+      {activeCategory && (
+        <div className="flex flex-col gap-1 border-b pb-4">
+          <h2 className="text-base font-semibold text-gray-900">
+            {activeCategory.label}
+          </h2>
+          <p className="text-sm text-gray-500">{activeCategory.description}</p>
+        </div>
+      )}
+
+      {/* Section content */}
+      <div>
+        {selectedCategory === "basic" && renderBasic()}
+        {selectedCategory === "demographics" && renderDemographics()}
+        {selectedCategory === "location" && renderLocation()}
+        {selectedCategory === "configuration" && renderConfiguration()}
+      </div>
+
+      {/* Actions */}
+      <div className="flex justify-end gap-3 pt-4 border-t">
+        <Button
+          variant="outline"
+          onClick={onCancel}
+          disabled={updateTaskMutation.isPending || updateBasicMutation.isPending}
+        >
+          Cancel
+        </Button>
+        <Button
+          onClick={handleSubmit}
+          disabled={updateTaskMutation.isPending || updateBasicMutation.isPending}
+          style={{ backgroundColor: "#095FAF" }}
+          className="text-white"
+        >
+          {(updateTaskMutation.isPending || updateBasicMutation.isPending) ? (
+            <>
+              <Loader2 className="animate-spin w-4 h-4 mr-2" />
+              Saving…
+            </>
+          ) : (
+            "Save Changes"
+          )}
+        </Button>
       </div>
     </div>
   );

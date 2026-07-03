@@ -54,6 +54,7 @@ import {
 } from "@/lib/hooks/useProject";
 import { useDebounce } from "@/lib/hooks/useDebounce";
 import TaskStatisticsContributers from "@/app/components/projectManager/taskStatisticsContributers";
+import { useTranslation } from "@/lib/hooks/useTranslation";
 // --- INTERFACES ---
 interface LanguageStatistic {
   dialect_id: string;
@@ -278,6 +279,7 @@ export default function TaskStatisticsReviwer({
   const [searchQuery, setSearchQuery] = useState("");
   const [verificationStatus, setVerificationStatus] = useState<string>();
   const debouncedTaskSearch = useDebounce(searchQuery, 500);
+  const { t } = useTranslation();
   const {
     data: microtasksData,
     isLoading: isMicroTaskLoading,
@@ -313,15 +315,15 @@ export default function TaskStatisticsReviwer({
   };
   console.log("Reviewer Stats Data:", stats);
   const userColumns: ColumnDef<UserData>[] = [
-    { accessorKey: "fullName", header: "Full Name" },
-    { accessorKey: "microtasksAssigned", header: "Assigned" },
-    { accessorKey: "microtasksCompleted", header: "Completed" },
+    { accessorKey: "fullName", header: t("fullName") },
+    { accessorKey: "microtasksAssigned", header: t("assigned") },
+    { accessorKey: "microtasksCompleted", header: t("completed") },
     { id: "actions", cell: () => <Eye className="h-4 w-4 text-gray-500" /> },
   ];
   const microTaskColumns: ColumnDef<MicroTaskStatisticReviewer>[] = [
     {
       id: "full_name",
-      header: "Full Name",
+      header: t("fullName"),
       enableSorting: true,
       cell: ({ row }) => (
         <div className="min-w-[150px] max-w-[300px] truncate">
@@ -333,7 +335,7 @@ export default function TaskStatisticsReviwer({
     },
     {
       accessorKey: "email",
-      header: "Email",
+      header: t("email"),
       enableSorting: true,
       cell: ({ row }) => (
         <div className="min-w-[150px] max-w-[300px] truncate">
@@ -343,7 +345,7 @@ export default function TaskStatisticsReviwer({
     },
     {
       accessorKey: "reviewed_count",
-      header: "Total Reviews Completed",
+      header: t("totalReviewsCompleted"),
       enableSorting: true,
       cell: ({ row }) => (
         <div className="min-w-[150px] max-w-[300px] truncate">
@@ -353,7 +355,7 @@ export default function TaskStatisticsReviwer({
     },
     {
       accessorKey: "pending_count",
-      header: "Reviews Pending",
+      header: t("reviewsPending"),
       enableSorting: true,
       cell: ({ row }) => (
         <div className="min-w-[150px] max-w-[300px] truncate">
@@ -415,11 +417,11 @@ export default function TaskStatisticsReviwer({
                     />
                   </svg>
                   <h3 className="text-sm font-semibold text-gray-800">
-                    Reviewer Tasks Statistics
+                    {t("reviewerTasksStatistics")}
                   </h3>
                 </div>
                 <p className="text-xs text-gray-500 mb-4">
-                  Overview of reviewer progress across all tasks
+                  {t("overviewReviewerProgress")}
                 </p>
                 <div className="grid grid-cols-4 gap-4">
                   <div className="bg-blue-50 rounded-lg p-4 text-center">
@@ -427,7 +429,7 @@ export default function TaskStatisticsReviwer({
                       {stats?.data?.totalFullyAssignedDataSets ?? ""}
                     </span>
                     <span className="text-sm text-gray-600 mt-1">
-                      Fully Assigned
+                      {t("fullyAssigned")}
                     </span>
                   </div>
                   <div className="bg-green-50 rounded-lg p-4 text-center">
@@ -435,7 +437,7 @@ export default function TaskStatisticsReviwer({
                       {stats?.data?.totalReviewedDataSets ?? ""}
                     </span>
                     <span className="text-sm text-gray-600 mt-1">
-                      Total Reviewed DataSets
+                      {t("totalReviewedDatasets")}
                     </span>
                   </div>
                   <div className="bg-orange-50 rounded-lg p-4 text-center">
@@ -443,7 +445,7 @@ export default function TaskStatisticsReviwer({
                       {stats?.data?.totalUnAssignedDataSets ?? ""}
                     </span>
                     <span className="text-sm text-gray-600 mt-1">
-                      Not Assigned
+                      {t("notAssigned")}
                     </span>
                   </div>
                   <div className="bg-orange-50 rounded-lg p-4 text-center">
@@ -451,7 +453,7 @@ export default function TaskStatisticsReviwer({
                       {stats?.data?.totalPartiallyAssignedDataSets ?? ""}
                     </span>
                     <span className="text-sm text-gray-600 mt-1">
-                      Partially Assigned
+                      {t("partiallyAssigned")}
                     </span>
                   </div>
                 </div>

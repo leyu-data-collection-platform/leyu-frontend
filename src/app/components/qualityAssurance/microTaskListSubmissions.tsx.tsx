@@ -37,7 +37,7 @@ import {
   getPaginationRowModel,
   flexRender,
 } from "@tanstack/react-table";
-import { ReviewerDatset } from "@/app/types/project";
+import { ReviewerDataset } from "@/app/types/project";
 import { SortingState } from "@tanstack/react-table";
 import { useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -161,7 +161,7 @@ const MicroTaskListSubission: React.FC<MicroTaskListProps> = ({
 
   const { data: rejectionReasonsData } = useReject();
 
-  const microtasks: ReviewerDatset[] = Array.isArray(
+  const microtasks: ReviewerDataset[] = Array.isArray(
     microtasksData?.data?.result
   )
     ? microtasksData.data.result
@@ -267,7 +267,7 @@ const MicroTaskListSubission: React.FC<MicroTaskListProps> = ({
     }
   };
 
-  const microTaskColumns: ColumnDef<ReviewerDatset>[] = [
+  const microTaskColumns: ColumnDef<ReviewerDataset>[] = [
     {
       accessorKey: "code",
       header: "Code",

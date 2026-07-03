@@ -122,7 +122,7 @@ export default function ReviewerTaskReviewPage() {
                         }
                         className="border border-gray-300 hover:border-blue-500 text-primary px-4 py-2 rounded-lg flex items-center"
                       >
-                        <span className="text-sm">View Instruction</span>
+                        <span className="text-sm">{t("viewInstruction")}</span>
                       </button>
                     </div>
                   ) : (

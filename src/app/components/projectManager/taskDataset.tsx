@@ -14,7 +14,7 @@ import {
   useGetTaskTaskDatasetDetail,
   useGetTaskTaskDatasetDetailFilter,
 } from "@/lib/hooks/useMicrotask";
-import { ReviewerDatset } from "@/app/types/project";
+import { ReviewerDataset } from "@/app/types/project";
 import {
   ArrowUpDown,
   ArrowUp,
@@ -321,7 +321,7 @@ const TaskDataset: React.FC<TaskDatasetProps> = ({ taskId }) => {
   
   console.log("[taskDataset] Hook called - modalSubmissionId:", modalSubmissionId, "detailedDataset:", detailedDataset, "isLoading:", isDetailedDatasetLoading);
 
-  const TaskDatasets: ReviewerDatset[] =
+  const TaskDatasets: ReviewerDataset[] =
     TaskDatasetsData?.data?.result &&
     Array.isArray(TaskDatasetsData.data.result)
       ? TaskDatasetsData.data.result
@@ -418,7 +418,7 @@ const TaskDataset: React.FC<TaskDatasetProps> = ({ taskId }) => {
     return null;
   };
 
-  const TaskDatasetColumns: ColumnDef<ReviewerDatset>[] = [
+  const TaskDatasetColumns: ColumnDef<ReviewerDataset>[] = [
     {
       accessorKey: "code",
       header: "ID",
@@ -982,10 +982,6 @@ const TaskDataset: React.FC<TaskDatasetProps> = ({ taskId }) => {
           const currentSubmission = getCurrentSubmission();
           if (!currentSubmission) return null;
 
-          const rejectionReasons = currentSubmission.rejectionReasons || [];
-          const flagReasons = currentSubmission.flagReason || [];
-          const isPending = currentSubmission.status === "Pending";
-
           return (
             <DialogContent className="max-w-2xl">
               <DialogHeader>
@@ -1209,6 +1205,7 @@ const TaskDataset: React.FC<TaskDatasetProps> = ({ taskId }) => {
                                 {/* Rejected - Rejection Reason */}
                                 {review.review_status?.toLowerCase() === "rejected" && (
                                   <div className="border border-red-300 rounded-lg p-4 bg-white">
+                                    <div>
                                     <p className="text-sm font-semibold text-red-700 mb-2">Rejection Reason</p>
                                     {review.rejection_reason && review.rejection_reason.length > 0 ? (
                                       <p className="text-sm text-red-700">
@@ -1217,6 +1214,17 @@ const TaskDataset: React.FC<TaskDatasetProps> = ({ taskId }) => {
                                     ) : (
                                       <p className="text-sm text-gray-600">No rejection reason provided</p>
                                     )}
+                                    </div>
+                                    {
+                                      review.flag_reason && review.flag_reason.length > 0 &&
+                                      <div>
+                                        <br></br>
+                                        <p className="text-sm font-semibold text-red-400 mb-2">Flag Reasons:</p>
+                                        <p className="text-sm text-red-400">
+                                        {review.flag_reason.join(", ")}
+                                      </p>
+                                      </div>
+                                    }
                                   </div>
                                 )}
 

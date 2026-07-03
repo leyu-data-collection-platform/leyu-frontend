@@ -23,13 +23,14 @@ import MicroTaskList from "@/app/components/projectManager/microTaskList";
 import { useQuery } from "@tanstack/react-query";
 import { useBasedataall } from "@/lib/hooks/useBasedata";
 import { useSession } from "next-auth/react";
-import { UserTask,UserTaskSpecfic } from "@/app/types/global";
+import { UserTask, UserTaskSpecfic } from "@/app/types/global";
 import { TaskInstructions } from "@/app/types/project";
 import CreateTaskInstruction from "@/app/components/projectManager/createTaskInstruction";
 import InstructionView from "@/app/components/projectManager/instructionView";
 import TaskStatistics from "@/app/components/projectManager/taskStatistics";
 import TaskStatisticsReviwer from "@/app/components/projectManager/taskStatisticsReviwer";
 import TaskDetailsGeneral from "@/app/components/projectManager/taskDetailsGeneral";
+import TaskOverview from "@/app/components/projectManager/taskOverview";
 import {
   useAddSingleMicroTask,
   useImportMicroTasksFromTask,
@@ -162,6 +163,7 @@ const TaskDetailPage: React.FC = () => {
     | "Users"
     | "submissions"
     | "Task distribution"
+    | "Analytics"
   >("Task Details");
   const [activeDistributionTab, setActiveDistributionTab] = useState<
     "Contributors" | "Reviewers"
@@ -188,9 +190,7 @@ const TaskDetailPage: React.FC = () => {
   >(undefined);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [contributor_id, setContributor_id] = useState("");
-  const [selectedUser, setSelectedUser] = useState<TaskMembers | null>(
-    null,
-  );
+  const [selectedUser, setSelectedUser] = useState<TaskMembers | null>(null);
   const [microTaskVerificationStatus, setMicroTaskVerificationStatus] =
     useState<string | undefined>(undefined);
   const [invitationPage, setInvitationPage] = useState(1);
@@ -413,7 +413,7 @@ const TaskDetailPage: React.FC = () => {
   const userColumns: ColumnDef<TaskMembers>[] = [
     {
       accessorKey: "fullName",
-      header: "Full Name",
+      header: t("fullName"),
       enableSorting: true,
 
       cell: ({ row }: { row: Row<TaskMembers> }) => (
@@ -426,7 +426,7 @@ const TaskDetailPage: React.FC = () => {
     },
     {
       accessorKey: "phoneNumber",
-      header: "Phone Number",
+      header: t("phoneNumberHeader"),
       enableSorting: true,
       cell: ({ row }: { row: Row<TaskMembers> }) => (
         <span className="flex items-center space-x-1">
@@ -437,12 +437,12 @@ const TaskDetailPage: React.FC = () => {
       ),
     },
     {
-      accessorKey: "email",
-      header: "Email",
+      accessorKey: "gender",
+      header: t("genderLabel"),
       enableSorting: true,
       cell: ({ row }: { row: Row<TaskMembers> }) => (
         <span className="flex items-center space-x-1">
-          <span>{row.original.email}</span>
+          <span>{row.original.gender}</span>
         </span>
       ),
     },
@@ -450,7 +450,7 @@ const TaskDetailPage: React.FC = () => {
       ? [
           {
             accessorKey: "referral_code",
-            header: "Referral code",
+            header: t("referralCode"),
             enableSorting: true,
             cell: ({ row }: { row: Row<TaskMembers> }) => (
               <span className="flex items-center space-x-1">
@@ -469,7 +469,7 @@ const TaskDetailPage: React.FC = () => {
       ? [
           {
             accessorKey: "Submissions",
-            header: "Submissions",
+            header: t("submissionsHeader"),
             enableSorting: true,
             cell: ({ row }: { row: Row<TaskMembers> }) => (
               <span className="flex items-center space-x-1">
@@ -484,7 +484,7 @@ const TaskDetailPage: React.FC = () => {
                     }, 20);
                   }}
                 >
-                  View
+                  {t("view")}
                 </Button>
               </span>
             ),
@@ -493,7 +493,7 @@ const TaskDetailPage: React.FC = () => {
       : []),
     {
       accessorKey: "status",
-      header: "Status",
+      header: t("statusHeader"),
       enableSorting: true,
       cell: ({ row }) => (
         <span className="flex items-center space-x-1">
@@ -510,7 +510,7 @@ const TaskDetailPage: React.FC = () => {
     },
     {
       accessorKey: "score",
-      header: "Score",
+      header: t("score"),
       enableSorting: true,
       cell: ({ row }: { row: Row<TaskMembers> }) => (
         <span className="flex items-center space-x-1">
@@ -520,7 +520,7 @@ const TaskDetailPage: React.FC = () => {
     },
     {
       accessorKey: "actions",
-      header: "Actions",
+      header: t("actionsHeader"),
       cell: ({ row }) => (
         <div className="flex space-x-2">
           {row.original.role === "Facilitator" ? (
@@ -677,7 +677,7 @@ const TaskDetailPage: React.FC = () => {
                 <div className="divide-y divide-gray-200 border border-gray-100 rounded-lg overflow-hidden bg-gray-50">
                   <div className="grid grid-cols-4 items-center gap-4 px-4 py-3">
                     <span className="text-sm font-semibold text-gray-500">
-                      First Name
+                      {t("firstName")}
                     </span>
                     <span className="col-span-3 text-gray-900">
                       {row.original.first_name}
@@ -685,7 +685,7 @@ const TaskDetailPage: React.FC = () => {
                   </div>
                   <div className="grid grid-cols-4 items-center gap-4 px-4 py-3">
                     <span className="text-sm font-semibold text-gray-500">
-                      Last Name(Grandfather Name)
+                      {t("lastName")}
                     </span>
                     <span className="col-span-3 text-gray-900">
                       {row.original.last_name}
@@ -693,7 +693,7 @@ const TaskDetailPage: React.FC = () => {
                   </div>
                   <div className="grid grid-cols-4 items-center gap-4 px-4 py-3">
                     <span className="text-sm font-semibold text-gray-500">
-                      Email
+                      {t("email")}
                     </span>
                     <span className="col-span-3 text-gray-900">
                       {row.original.email}
@@ -701,7 +701,7 @@ const TaskDetailPage: React.FC = () => {
                   </div>
                   <div className="grid grid-cols-4 items-center gap-4 px-4 py-3">
                     <span className="text-sm font-semibold text-gray-500">
-                      Status
+                      {t("statusHeader")}
                     </span>
                     <span className="col-span-3">
                       <span
@@ -729,7 +729,7 @@ const TaskDetailPage: React.FC = () => {
                   }}
                   disabled={isRemoving || !session?.access_token}
                 >
-                  {isRemoving ? "Removing..." : "Remove"}
+                  {isRemoving ? t("removing") : t("remove")}
                 </Button>
                 <Button
                   variant="outline"
@@ -744,8 +744,8 @@ const TaskDetailPage: React.FC = () => {
                   disabled={isRemoving || !session?.access_token}
                 >
                   {row.original.status.toLowerCase() === "active"
-                    ? "Deactivate"
-                    : "Activate"}
+                    ? t("deactivateUser")
+                    : t("activate")}
                 </Button>
               </div>
             </DialogContent>
@@ -1019,6 +1019,16 @@ const TaskDetailPage: React.FC = () => {
           >
             {t("taskDistribution")}
           </button>
+          <button
+            onClick={() => setActiveTab("Analytics")}
+            className={`py-2 px-4 text-sm font-medium ${
+              activeTab === "Analytics"
+                ? "border-b-2 border-primary text-primary"
+                : "text-gray-500 hover:text-gray-500"
+            }`}
+          >
+            {t("taskAnalytics")}
+          </button>
         </nav>
       </div>
 
@@ -1076,7 +1086,7 @@ const TaskDetailPage: React.FC = () => {
                     strokeLinejoin="round"
                   />
                 </svg>{" "}
-                <span className="text-sm font-medium">Back</span>
+                <span className="text-sm font-medium">{t("back")}</span>
               </button>
               <TaskDatasetSubmit
                 task_id={taskId}
@@ -1111,7 +1121,7 @@ const TaskDetailPage: React.FC = () => {
                   >
                     <div className="flex items-center space-x-2">
                       <Users className="h-5 w-5 text-gray-400" />
-                      <span>Invite Users</span>
+                      <span>{t("inviteUsers")}</span>
                     </div>
                     <ChevronDown
                       className={`h-5 w-5 text-gray-400 transition-transform ${
@@ -1134,7 +1144,7 @@ const TaskDetailPage: React.FC = () => {
                               </div>
                               <div>
                                 <h3 className="text-sm font-medium text-gray-900">
-                                  Reviewer
+                                  {t("reviewer")}
                                 </h3>
                               </div>
                             </div>
@@ -1148,7 +1158,7 @@ const TaskDetailPage: React.FC = () => {
                               className="w-full flex items-center justify-center px-4 py-2 bg-purple-600 text-white rounded-md text-sm font-medium hover:bg-purple-700"
                             >
                               <UserPlus className="h-4 w-4 mr-2" />
-                              Invite Reviewers
+                              {t("inviteReviewers")}
                             </button>
                           </div>
 
@@ -1196,7 +1206,7 @@ const TaskDetailPage: React.FC = () => {
                                   </div>
                                   <div>
                                     <h3 className="text-sm font-medium text-gray-900">
-                                      Contributor
+                                      {t("contributor")}
                                     </h3>
                                   </div>
                                 </div>
@@ -1208,7 +1218,7 @@ const TaskDetailPage: React.FC = () => {
                                   className="w-full flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700"
                                 >
                                   <UserPlus className="h-4 w-4 mr-2" />
-                                  Invite Contributor
+                                  {t("inviteContributor")}
                                 </button>
                               </div>
                             </>
@@ -1223,7 +1233,7 @@ const TaskDetailPage: React.FC = () => {
                               </div>
                               <div>
                                 <h3 className="text-sm font-medium text-gray-900">
-                                  Facilitator
+                                  {t("facilitatom")}
                                 </h3>
                               </div>
                             </div>
@@ -1237,7 +1247,7 @@ const TaskDetailPage: React.FC = () => {
                               className="w-full flex items-center justify-center px-4 py-2 bg-green-600 text-white rounded-md text-sm font-medium hover:bg-green-700"
                             >
                               <UserPlus className="h-4 w-4 mr-2" />
-                              Invite Facilitator
+                              {t("inviteFacilitator")}
                             </button>
                           </div>
                           <div className="border border-gray-100 rounded-lg p-4 bg-white ">
@@ -1249,7 +1259,7 @@ const TaskDetailPage: React.FC = () => {
                               </div>
                               <div>
                                 <h3 className="text-sm font-medium text-gray-900">
-                                  Quality Assurance
+                                  {t("qualityAssurance")}
                                 </h3>
                               </div>
                             </div>
@@ -1263,7 +1273,7 @@ const TaskDetailPage: React.FC = () => {
                               className="w-full flex items-center justify-center px-4 py-2 bg-[#9747FF] text-white rounded-md text-sm font-medium hover:bg-purple-700"
                             >
                               <UserPlus className="h-4 w-4 mr-2" />
-                              Invite QA
+                              {t("inviteQA")}
                             </button>
                           </div>
                         </div>
@@ -1282,7 +1292,7 @@ const TaskDetailPage: React.FC = () => {
                   >
                     <div className={` flex items-center space-x-2`}>
                       <Link2 className="h-5 w-5 text-gray-400" />
-                      <span>Invite via Invitation Link</span>
+                      <span>{t("inviteViaLink")}</span>
                     </div>
                     <ChevronDown
                       className={`h-5 w-5 text-gray-400 transition-transform ${
@@ -1295,7 +1305,7 @@ const TaskDetailPage: React.FC = () => {
                       <div className="flex items-center gap-4 mb-4">
                         <div className="flex-1">
                           <label className="text-sm font-medium text-gray-500">
-                            Organization
+                            {t("organizationField")}
                           </label>
                           <select
                             value={selectedOrganization}
@@ -1304,7 +1314,7 @@ const TaskDetailPage: React.FC = () => {
                             }
                             className="w-full p-2 border border-gray-100 rounded focus:outline-none focus:border-primary"
                           >
-                            <option value="">Select Organization</option>
+                            <option value="">{t("selectOrganization")}</option>
                             {organizationOptions.map(
                               (organization: { id: string; name: string }) => (
                                 <option
@@ -1319,7 +1329,7 @@ const TaskDetailPage: React.FC = () => {
                         </div>
                         <div className="flex-1">
                           <label className="text-sm font-medium text-gray-500">
-                            Role
+                            {t("roleField")}
                           </label>
                           <select
                             value={selectedRole}
@@ -1333,14 +1343,14 @@ const TaskDetailPage: React.FC = () => {
                             }
                             className="w-full p-2 border border-gray-100 rounded focus:outline-none focus:border-primary"
                           >
-                            <option value="">Select Role</option>
+                            <option value="">{t("selectRole")}</option>
                             <option value="Contributor">Contributor</option>
                             <option value="Reviewer">Reviewer</option>
                           </select>
                         </div>
                         <div className="flex-1">
                           <label className="text-sm font-medium text-gray-500">
-                            Expiry Date
+                            {t("expiryDateField")}
                           </label>
                           <input
                             type="date"
@@ -1352,7 +1362,7 @@ const TaskDetailPage: React.FC = () => {
                         </div>
                         <div className="flex-1">
                           <label className="text-sm font-medium text-gray-500">
-                            Max Invitations
+                            {t("maxInvitationsField")}
                           </label>
                           <input
                             type="number"
@@ -1388,13 +1398,13 @@ const TaskDetailPage: React.FC = () => {
                                   strokeLinejoin="round"
                                 />
                               </svg>
-                              Generate Link
+                              {t("generateLink")}
                             </Button>
                           </DialogTrigger>
                           <DialogContent>
                             <DialogHeader>
                               <DialogTitle>
-                                Generated Invitation Link
+                                {t("generatedInvitationLink")}
                               </DialogTitle>
                             </DialogHeader>
                             <div className="text-sm text-gray-600">
@@ -1403,7 +1413,7 @@ const TaskDetailPage: React.FC = () => {
                                 onClick={handleCopy}
                                 className="mt-6 bg-primary text-white flex items-center gap-2"
                               >
-                                {copied ? "Copied!" : "Copy Link"}
+                                {copied ? t("copied") : t("copyLink")}
                                 <Copy className="h-4 w-4" />
                               </Button>
                             </div>
@@ -1415,7 +1425,7 @@ const TaskDetailPage: React.FC = () => {
                         <div className="border border-gray-100 rounded-md px-3 py-1 flex items-center"></div>
                       </div>
                       <h4 className="text-md font-semibold text-gray-500 mb-2">
-                        Generated Links
+                        {t("generatedLinks")}
                       </h4>
                       <div className="rounded-md border border-gray-100 bg-white overflow-hidden relative">
                         {isInvitationLoading && (
@@ -1427,17 +1437,16 @@ const TaskDetailPage: React.FC = () => {
                           <TableHeader>
                             <TableRow>
                               <TableHead className="text-sm font-bold text-gray-500">
-                                Organization
+                                {t("organizationField")}
                               </TableHead>
                               <TableHead className="text-sm font-bold text-gray-500">
-                                Link
-                              </TableHead>
-
-                              <TableHead className="text-sm font-bold text-gray-500">
-                                Expiry date
+                                {t("link") ?? "Link"}
                               </TableHead>
                               <TableHead className="text-sm font-bold text-gray-500">
-                                Max invitations
+                                {t("expiryDateField")}
+                              </TableHead>
+                              <TableHead className="text-sm font-bold text-gray-500">
+                                {t("maxInvitationsField")}
                               </TableHead>
                               <TableHead className="text-sm font-bold text-gray-500"></TableHead>
                             </TableRow>
@@ -1493,7 +1502,7 @@ const TaskDetailPage: React.FC = () => {
                                 >
                                   {isInvitationLoading
                                     ? ""
-                                    : "No links generated."}
+                                    : t("noLinksGenerated")}
                                 </TableCell>
                               </TableRow>
                             )}
@@ -1529,7 +1538,7 @@ const TaskDetailPage: React.FC = () => {
                         : "text-gray-500 hover:text-gray-500"
                     }`}
                   >
-                    Facilitator
+                    {t("facilitatom")}
                   </button>
 
                   <button
@@ -1540,7 +1549,7 @@ const TaskDetailPage: React.FC = () => {
                         : "text-gray-500 hover:text-gray-500"
                     }`}
                   >
-                    Contributor
+                    {t("contributor")}
                   </button>
 
                   <button
@@ -1551,7 +1560,7 @@ const TaskDetailPage: React.FC = () => {
                         : "text-gray-500 hover:text-gray-500"
                     }`}
                   >
-                    Reviewer
+                    {t("reviewer")}
                   </button>
                   <button
                     onClick={() => setRoleSearch("QualityAssurance")}
@@ -1561,7 +1570,7 @@ const TaskDetailPage: React.FC = () => {
                         : "text-gray-500 hover:text-gray-500"
                     }`}
                   >
-                    Quality Assurance
+                    {t("qualityAssurance")}
                   </button>
                 </nav>
               </div>
@@ -1586,7 +1595,7 @@ const TaskDetailPage: React.FC = () => {
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button className="bg-primary text-white flex items-center gap-2">
-                            Order By
+                            {t("orderBy")}
                             <ChevronDown className="h-4 w-4" />
                           </Button>
                         </DropdownMenuTrigger>
@@ -1598,7 +1607,7 @@ const TaskDetailPage: React.FC = () => {
                             }}
                             className="cursor-pointer"
                           >
-                            Score: High → Low
+                            Score: {t("score")}: ↑ → ↓
                           </DropdownMenuItem>
                           <DropdownMenuItem
                             onClick={() => {
@@ -1607,7 +1616,7 @@ const TaskDetailPage: React.FC = () => {
                             }}
                             className="cursor-pointer"
                           >
-                            Score: Low → High
+                            Score: {t("score")}: ↓ → ↑
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
@@ -1653,7 +1662,7 @@ const TaskDetailPage: React.FC = () => {
                                 strokeLinejoin="round"
                               />
                             </svg>
-                            Export to CSV
+                            {t("exportToCsv")}
                           </Button>
                           <Button
                             onClick={() => {
@@ -1669,22 +1678,20 @@ const TaskDetailPage: React.FC = () => {
                               xmlns="http://www.w3.org/2000/svg"
                             >
                               <path
-                                d="M12 4.5V14.5M12 4.5C11.2998 4.5 9.99153 6.4943 9.5 7M12 4.5C12.7002 4.5 14.0085 6.4943 14.5 7"
+                                d="M12 3v12m0 0l-4-4m4 4l4-4"
                                 stroke="white"
                                 strokeWidth="2"
                                 strokeLinecap="round"
                                 strokeLinejoin="round"
                               />
-                              ``{" "}
                               <path
-                                d="M20 16.5C20 18.982 19.482 19.5 17 19.5H7C4.518 19.5 4 18.982 4 16.5"
+                                d="M4 17v1a3 3 0 003 3h10a3 3 0 003-3v-1"
                                 stroke="white"
-                                strokeWidth="1.5"
+                                strokeWidth="2"
                                 strokeLinecap="round"
-                                strokeLinejoin="round"
                               />
                             </svg>
-                            Import to task
+                            {t("importContributorsFromTask")}
                           </Button>
                           {showExportMenu && (
                             <div
@@ -1697,7 +1704,7 @@ const TaskDetailPage: React.FC = () => {
                                 }}
                                 className="w-full text-left px-4 py-2 text-sm text-gray-500 hover:bg-gray-100"
                               >
-                                Export as CSV
+                                {t("exportAsCsv")}
                               </button>
                               <button
                                 onClick={() => {
@@ -1706,7 +1713,7 @@ const TaskDetailPage: React.FC = () => {
                                 }}
                                 className="w-full text-left px-4 py-2 text-sm text-gray-500 hover:bg-gray-100"
                               >
-                                Import to task
+                                {t("importToTask")}
                               </button>
                             </div>
                           )}
@@ -1745,7 +1752,7 @@ const TaskDetailPage: React.FC = () => {
                             </clipPath>
                           </defs>
                         </svg>
-                        Auto Distribute Contributors
+                        {t("autoDistributeContributors")}
                       </Button>
                     )}
                   </div>
@@ -1852,6 +1859,7 @@ const TaskDetailPage: React.FC = () => {
         </div>
       )}
       {activeTab === "submissions" && <TaskDataset taskId={taskId} />}
+      {activeTab === "Analytics" && <TaskOverview taskId={taskId} />}
       {activeTab === "Task distribution" && (
         <>
           <div className="border-b border-gray-100 mb-4">
@@ -1912,7 +1920,7 @@ const TaskDetailPage: React.FC = () => {
                           </defs>
                         </svg>
                         <span className="inline-block text-gray-600 align-middle ml-0">
-                          Contributor task distribution
+                          {t("contributorTaskDistribution")}
                         </span>
                       </span>
                     </span>
@@ -1924,7 +1932,7 @@ const TaskDetailPage: React.FC = () => {
                     className="bg-white text-primary hover:bg-blue-700 flex items-center gap-2"
                     onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                   >
-                    Task Actions
+                    {t("taskActions")}
                     <MoreHorizontal className="h-4 w-4" />
                   </Button>
                   {isDropdownOpen && (
@@ -1937,7 +1945,7 @@ const TaskDetailPage: React.FC = () => {
                             setIsDropdownOpen(false);
                           }}
                         >
-                          {task.is_closed ? "Open Task" : "Close Task"}
+                          {task.is_closed ? t("openTask") : t("closeTask")}
                         </button>
                         <button
                           className="w-full text-left px-4 py-2 text-sm text-gray-500 hover:bg-gray-100"
@@ -1947,8 +1955,8 @@ const TaskDetailPage: React.FC = () => {
                           }}
                         >
                           {task.distribution_started
-                            ? "Redistribute Task "
-                            : "Start Task Distribution"}
+                            ? t("redistributeTask")
+                            : t("startTaskDistribution")}
                         </button>
                       </div>
                     </div>
@@ -1990,7 +1998,7 @@ const TaskDetailPage: React.FC = () => {
                           </defs>
                         </svg>
                         <span className="inline-block text-gray-600 align-middle ml-0">
-                          Reviewer task distribution
+                          {t("reviewerTaskDistribution")}
                         </span>
                       </span>
                     </span>
@@ -2004,7 +2012,7 @@ const TaskDetailPage: React.FC = () => {
                       setIsDropdownOpenReviewer(!isDropdownOpenReviewer)
                     }
                   >
-                    Task Actions
+                    {t("taskActions")}
                     <MoreHorizontal className="h-4 w-4" />
                   </Button>
                   {isDropdownOpenReviewer && (
@@ -2017,7 +2025,7 @@ const TaskDetailPage: React.FC = () => {
                             setIsDropdownOpen(false);
                           }}
                         >
-                          Distribute Task
+                          {t("distributeTask")}
                         </button>
                       </div>
                     </div>

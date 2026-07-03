@@ -11,7 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { renderPaginationButtons } from "@/components/ui/paginationHelper";
 import { useGetMicroTaskDataSetDetail } from "@/lib/hooks/useMicrotask";
-import { ReviewerDatset } from "@/app/types/project";
+import { ReviewerDataset } from "@/app/types/project";
 import {
   ArrowUpDown,
   ArrowUp,
@@ -164,7 +164,7 @@ const TaskDataset: React.FC<TaskDatasetProps> = ({ microTaskId }) => {
   });
 
   // Declare TaskDatasets early so it can be used in useEffects
-  const TaskDatasets: ReviewerDatset[] = TaskDatasetsData?.data?.result && Array.isArray(TaskDatasetsData.data.result)
+  const TaskDatasets: ReviewerDataset[] = TaskDatasetsData?.data?.result && Array.isArray(TaskDatasetsData.data.result)
     ? TaskDatasetsData.data.result
     : [];
 
@@ -387,7 +387,7 @@ const TaskDataset: React.FC<TaskDatasetProps> = ({ microTaskId }) => {
   };
 
   /* ────────────────────── Columns ────────────────────── */
-  const columns: ColumnDef<ReviewerDatset>[] = [
+  const columns: ColumnDef<ReviewerDataset>[] = [
     {
       accessorKey: "code",
       header: "ID",

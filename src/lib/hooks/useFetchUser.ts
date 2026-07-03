@@ -16,7 +16,7 @@ import {
 } from "@/app/types/global";
 import {
 
-  ReviewerDatset,
+  ReviewerDataset,
 
 } from "@/app/types/project";
 import { useSession } from "next-auth/react";
@@ -27,7 +27,7 @@ interface UserProfilesResponse extends PaginationResponse<User> { }
 interface UserProfilesRoleResponse extends PaginationResponse<UserData> { }
 interface UserforFaciltatorRoleResponse extends PaginationResponse<UserTask> { }
 interface UserLogResponse extends PaginationResponse<UserLog> { }
-interface FacilltatorContributorsSummtionResponse extends PaginationResponse<ReviewerDatset> { }
+interface FacilltatorContributorsSummtionResponse extends PaginationResponse<ReviewerDataset> { }
 interface UserMeResponse extends SinglerResponse<MeResponse> { }
 interface RemoveFacilitatorContributorPayload {
   contributor_ids: string[];

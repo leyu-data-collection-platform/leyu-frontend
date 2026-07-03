@@ -47,12 +47,11 @@ const EditTaskInstruction: React.FC<EditTaskInstructionProps> = ({
   open,
   setOpen,
 }) => {
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(100);
   const [taskSearchQuery, setTaskSearchQuery] = useState("");
   const debouncedTaskSearch = useDebounce(taskSearchQuery, 500);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [formData, setFormData] = useState({
+    id:taskInstructions.id,
     title: taskInstructions.title,
     content: taskInstructions.content,
     video_instruction_url: taskInstructions.video_instruction_url,
@@ -73,6 +72,7 @@ const EditTaskInstruction: React.FC<EditTaskInstructionProps> = ({
 
     try {
       editInstructionMutation.mutateAsync({
+        id:formData.id,
         title: formData.title,
         content: formData.content,
         video_instruction_url: formData.video_instruction_url? formData.video_instruction_url : "",

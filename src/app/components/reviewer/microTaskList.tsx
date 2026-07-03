@@ -45,7 +45,7 @@ import {
   flexRender,
   Row,
 } from "@tanstack/react-table";
-import { ReviewerDatset } from "@/app/types/project";
+import { ReviewerDataset } from "@/app/types/project";
 import { SortingState } from "@tanstack/react-table";
 import { toast } from "sonner";
 import { formatDateMedium } from "@/app/types/dateUtils";
@@ -226,6 +226,11 @@ const MicroTaskList: React.FC<MicroTaskListProps> = ({
     useState<string>("");
   const [selectedFlagTypeId, setSelectedFlagTypeId] = useState<string>("");
   const [flagComment, setFlagComment] = useState<string>("");
+  const [selectedRejectFlagTypeIds, setSelectedRejectFlagTypeIds] = useState<
+    string[]
+  >([]);
+  const [rejectIsUncertain, setRejectIsUncertain] = useState(false);
+  const [approveIsUncertain, setApproveIsUncertain] = useState(false);
   const [isRejectDialogOpen, setIsRejectDialogOpen] = useState(false);
   const [isApproveDialogOpen, setIsApproveDialogOpen] = useState(false);
   const [isFlagDialogOpen, setIsFlagDialogOpen] = useState(false);
@@ -235,7 +240,7 @@ const MicroTaskList: React.FC<MicroTaskListProps> = ({
   const [currentRowIndex, setCurrentRowIndex] = useState<number | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedMicroTask, setSelectedMicroTask] =
-    useState<ReviewerDatset | null>(null);
+    useState<ReviewerDataset | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [reviewedItems, setReviewedItems] = useState<
     Record<string, "approved" | "rejected">
@@ -247,7 +252,7 @@ const MicroTaskList: React.FC<MicroTaskListProps> = ({
   }, [status_data, setMicroTaskPage]);
 
   // Modal handlers
-  const handleViewDetails = (microTask: ReviewerDatset) => {
+  const handleViewDetails = (microTask: ReviewerDataset) => {
     setSelectedMicroTask(microTask);
     setIsDetailModalOpen(true);
   };
@@ -278,7 +283,7 @@ const MicroTaskList: React.FC<MicroTaskListProps> = ({
 
   const { data: rejectionReasonsData } = useReject();
 
-  const microtasks: ReviewerDatset[] = Array.isArray(
+  const microtasks: ReviewerDataset[] = Array.isArray(
     microtasksData?.data?.result,
   )
     ? (microtasksData?.data?.result ?? [])
@@ -320,12 +325,16 @@ const MicroTaskList: React.FC<MicroTaskListProps> = ({
         rejection_type_ids: selectedRejectionReasonIds,
         comment: rejectionComment || "",
         flag: isRejectFlag,
+        flag_type_ids: selectedRejectFlagTypeIds,
+        is_uncertain: rejectIsUncertain,
       });
       toast.success("Microtask rejected successfully.");
       setReviewedItems((prev) => ({ ...prev, [microTaskId]: "rejected" }));
       setIsRejectDialogOpen(false);
       setSelectedRejectionReasonIds([]);
       setRejectionComment("");
+      setSelectedRejectFlagTypeIds([]);
+      setRejectIsUncertain(false);
     } catch (error) {
       toast.error("Error rejecting microtask", {
         description: (error as any)?.message || "An unexpected error occurred",
@@ -341,11 +350,13 @@ const MicroTaskList: React.FC<MicroTaskListProps> = ({
         annotation_id: selectedAnnotationId,
         annotation: selectedAnnotationName,
         annotationIds: [selectedAnnotationId],
+        is_uncertain: approveIsUncertain,
       });
       toast.success("Microtask approved successfully.");
       setReviewedItems((prev) => ({ ...prev, [microTaskId]: "approved" }));
       setIsApproveDialogOpen(false);
       setSelectedAnnotationId("");
+      setApproveIsUncertain(false);
     } catch (error) {
       toast.error("Error approving microtask", {
         description: (error as any)?.message || "An unexpected error occurred",
@@ -403,6 +414,8 @@ const MicroTaskList: React.FC<MicroTaskListProps> = ({
 
   const handleReject = (microTaskId: string) => {
     setSelectedMicroTaskId(microTaskId);
+    setIsRejectFlag(false);
+    setSelectedRejectFlagTypeIds([]);
     setIsRejectDialogOpen(true);
   };
 
@@ -507,7 +520,7 @@ const MicroTaskList: React.FC<MicroTaskListProps> = ({
     }
   }, [microtasks, currentRowIndex, isDialogOpen, isRefetching]);
 
-  const microTaskColumns: ColumnDef<ReviewerDatset>[] = [
+  const microTaskColumns: ColumnDef<ReviewerDataset>[] = [
     {
       accessorKey: "code",
       header: t("codeHeader"),
@@ -516,6 +529,18 @@ const MicroTaskList: React.FC<MicroTaskListProps> = ({
       accessorKey: "microTask.code",
       header: t("microTaskCodeHeader"),
     },
+    ...(status_data.toLowerCase() === "pending"
+      ? [
+          {
+            accessorKey: "dead_line",
+            header: t("deadline"),
+            cell: ({ row }: { row: Row<ReviewerDataset> }) =>
+              row.original.dead_line
+                ? formatDateMedium(row.original.dead_line)
+                : "—",
+          },
+        ]
+      : []),
     {
       accessorKey: "status",
       header: t("finalReviewHeader"),
@@ -650,12 +675,13 @@ const MicroTaskList: React.FC<MicroTaskListProps> = ({
         </div>
       ),
     },
+
     ...(status_data.toLowerCase() === "pending"
       ? [
           {
             accessorKey: "",
             header: t("actionHeader"),
-            cell: ({ row }: { row: Row<ReviewerDatset> }) => (
+            cell: ({ row }: { row: Row<ReviewerDataset> }) => (
               <Button
                 className="bg-primary text-white hover:bg-blue-700 flex items-center gap-2"
                 onClick={() => {
@@ -769,6 +795,16 @@ const MicroTaskList: React.FC<MicroTaskListProps> = ({
                         &middot;{" "}
                         {createdDate ? formatDateMedium(createdDate) : ""}
                       </span>
+                      {status_data.toLowerCase() === "pending" &&
+                        currentRowIndex !== null &&
+                        microtasks[currentRowIndex]?.dead_line && (
+                          <span className="px-2 py-1 text-orange-600 rounded">
+                            &middot; {t("deadline")}:{" "}
+                            {formatDateMedium(
+                              microtasks[currentRowIndex].dead_line,
+                            )}
+                          </span>
+                        )}
                     </span>
                   </div>
                 </div>
@@ -926,10 +962,10 @@ const MicroTaskList: React.FC<MicroTaskListProps> = ({
                             </div>
                             <div className="mr-4 flex space-x-1 m-10">
                               {currentRowIndex !== null &&
-                              microTaskTotalElements > 0 &&
+                              microtasks.length > 0 &&
                               !isRefetching
                                 ? Array.from({
-                                    length: microTaskTotalElements,
+                                    length: microtasks.length,
                                   }).map((_, index) => {
                                     const isCompleted =
                                       index < currentRowIndex + 1;
@@ -942,7 +978,7 @@ const MicroTaskList: React.FC<MicroTaskListProps> = ({
                                             : "bg-gray-200"
                                         }`}
                                         style={{
-                                          width: `${100 / Number(microTaskTotalElements)}%`,
+                                          width: `${100 / microtasks.length}%`,
                                         }}
                                       />
                                     );
@@ -1054,7 +1090,7 @@ const MicroTaskList: React.FC<MicroTaskListProps> = ({
                         <Button
                           onClick={handlePreviousMicroTask}
                           disabled={
-                            (currentRowIndex === 0 && microTaskPage === 1) ||
+                            currentRowIndex === 0 ||
                             currentRowIndex === null ||
                             isRefetching
                           }
@@ -1268,87 +1304,144 @@ const MicroTaskList: React.FC<MicroTaskListProps> = ({
                           placeholder={t("enterAdditionalComments")}
                         />
                       </div>
+                      {/* Flag switch + flag reasons */}
                       <div className="mb-4">
-                        <label className="text-sm font-semibold block mb-2">
-                          {" "}
-                        </label>
-                        <div
-                          role="radiogroup"
-                          aria-label="Reject mode"
-                          className="inline-flex bg-gray-100 p-1 rounded-md border border-gray-200"
-                        >
-                          <label
-                            className={`cursor-pointer px-3 py-1 text-sm rounded-md flex items-center gap-2 transition-colors ${
-                              isRejectFlag
-                                ? "bg-white text-primary shadow-sm"
-                                : "text-gray-600"
+                        <div className="flex items-center justify-between mb-1">
+                          <div>
+                            <span className="text-sm font-semibold">
+                              {t("flag")}
+                            </span>
+                            <p className="text-xs text-gray-500 mt-0.5">
+                              {t("selectFlagHint")}
+                            </p>
+                          </div>
+                          <button
+                            type="button"
+                            role="switch"
+                            aria-checked={isRejectFlag}
+                            onClick={() => {
+                              setIsRejectFlag((prev) => !prev);
+                              if (isRejectFlag)
+                                setSelectedRejectFlagTypeIds([]);
+                            }}
+                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-1 ${
+                              isRejectFlag ? "bg-red-500" : "bg-gray-200"
                             }`}
                           >
-                            <input
-                              type="radio"
-                              name="rejectMode"
-                              className="sr-only"
-                              checked={isRejectFlag === true}
-                              onChange={() => setIsRejectFlag(true)}
-                              aria-checked={isRejectFlag === true}
+                            <span
+                              className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${
+                                isRejectFlag ? "translate-x-6" : "translate-x-1"
+                              }`}
                             />
-                            <svg
-                              className={`w-4 h-4 transition-opacity ${isRejectFlag ? "opacity-100 text-primary" : "opacity-30 text-gray-400"}`}
-                              viewBox="0 0 24 24"
-                              fill="none"
-                            >
-                              <circle
-                                cx="12"
-                                cy="12"
-                                r="10"
-                                stroke="currentColor"
-                                strokeWidth="1.5"
-                              />
-                              <path
-                                d="M9 12l2 2 4-4"
-                                stroke="currentColor"
-                                strokeWidth="1.5"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                              />
-                            </svg>
-                            <span> {t("flag")}</span>
-                          </label>
-
-                          <label
-                            className={`cursor-pointer px-3 py-1 text-sm rounded-md flex items-center gap-2 transition-colors ${
-                              !isRejectFlag
-                                ? "bg-white text-primary shadow-sm"
-                                : "text-gray-600"
-                            }`}
-                          >
-                            <input
-                              type="radio"
-                              name="rejectMode"
-                              className="sr-only"
-                              checked={isRejectFlag === false}
-                              onChange={() => setIsRejectFlag(false)}
-                              aria-checked={isRejectFlag === false}
-                            />
-                            <svg
-                              className={`w-4 h-4 transition-opacity ${!isRejectFlag ? "opacity-100 text-primary" : "opacity-30 text-gray-400"}`}
-                              viewBox="0 0 24 24"
-                              fill="none"
-                            >
-                              <path
-                                d="M6 6l12 12M18 6L6 18"
-                                stroke="currentColor"
-                                strokeWidth="1.5"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                              />
-                            </svg>
-                            <span></span>
-                          </label>
+                          </button>
                         </div>
-                        <p className="text-xs text-gray-500 mt-2">
-                          {t("selectFlagHint")}
-                        </p>
+
+                        {/* Flag reason list — only visible when flag is on */}
+                        {isRejectFlag && (
+                          <div className="mt-3">
+                            <label className="text-xs font-semibold text-gray-600 block mb-1">
+                              Flag Reason{" "}
+                              <span className="text-gray-400 font-normal">
+                                (optional)
+                              </span>
+                            </label>
+                            <div className="max-h-36 overflow-y-auto border border-red-200 rounded-lg bg-white">
+                              {flagTypes.length > 0 ? (
+                                flagTypes.map(
+                                  (flag: { id: string; name: string }) => {
+                                    const isSelected =
+                                      selectedRejectFlagTypeIds.includes(
+                                        flag.id,
+                                      );
+                                    return (
+                                      <label
+                                        key={flag.id}
+                                        className={`flex items-center gap-3 p-3 cursor-pointer transition-colors hover:bg-red-50 border-b border-gray-100 last:border-b-0 ${
+                                          isSelected ? "bg-red-50" : ""
+                                        }`}
+                                      >
+                                        <input
+                                          type="checkbox"
+                                          checked={isSelected}
+                                          onChange={(e) => {
+                                            if (e.target.checked) {
+                                              setSelectedRejectFlagTypeIds(
+                                                (prev) => [...prev, flag.id],
+                                              );
+                                            } else {
+                                              setSelectedRejectFlagTypeIds(
+                                                (prev) =>
+                                                  prev.filter(
+                                                    (id) => id !== flag.id,
+                                                  ),
+                                              );
+                                            }
+                                          }}
+                                          className="w-4 h-4 accent-red-500 bg-gray-100 border-gray-300 rounded"
+                                        />
+                                        <span
+                                          className={`flex-1 text-sm ${
+                                            isSelected
+                                              ? "text-red-600 font-medium"
+                                              : "text-gray-700"
+                                          }`}
+                                        >
+                                          {flag.name}
+                                        </span>
+                                        {isSelected && (
+                                          <svg
+                                            className="w-4 h-4 text-red-500"
+                                            fill="currentColor"
+                                            viewBox="0 0 20 20"
+                                          >
+                                            <path
+                                              fillRule="evenodd"
+                                              d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                              clipRule="evenodd"
+                                            />
+                                          </svg>
+                                        )}
+                                      </label>
+                                    );
+                                  },
+                                )
+                              ) : (
+                                <div className="p-4 text-center text-gray-500 text-sm">
+                                  No flag types available
+                                </div>
+                              )}
+                            </div>
+                            {selectedRejectFlagTypeIds.length > 0 && (
+                              <p className="text-xs text-red-500 mt-1">
+                                {selectedRejectFlagTypeIds.length} flag reason
+                                {selectedRejectFlagTypeIds.length > 1
+                                  ? "s"
+                                  : ""}{" "}
+                                selected
+                              </p>
+                            )}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Is Uncertain toggle */}
+                      <div className="mb-4 flex items-center gap-3">
+                        {" "}
+                        <input
+                          type="checkbox"
+                          id="rejectIsUncertain"
+                          checked={rejectIsUncertain}
+                          onChange={(e) =>
+                            setRejectIsUncertain(e.target.checked)
+                          }
+                          className="w-4 h-4 text-primary bg-gray-100 border-gray-300 rounded focus:ring-primary focus:ring-2"
+                        />
+                        <label
+                          htmlFor="rejectIsUncertain"
+                          className="text-sm font-semibold cursor-pointer"
+                        >
+                          {t('markAsUncertain')}
+                        </label>
                       </div>
                     </div>
                   </div>
@@ -1362,6 +1455,8 @@ const MicroTaskList: React.FC<MicroTaskListProps> = ({
                           setSelectedRejectionReasonIds([]);
                           setRejectionComment("");
                           setRejectionSearch("");
+                          setSelectedRejectFlagTypeIds([]);
+                          setRejectIsUncertain(false);
                         }}
                       >
                         {t("cancel")}
@@ -1428,12 +1523,30 @@ const MicroTaskList: React.FC<MicroTaskListProps> = ({
                         )}
                       </select>
                     </div>
+                    <div className="mb-4 flex items-center gap-3">
+                      <input
+                        type="checkbox"
+                        id="approveIsUncertain"
+                        checked={approveIsUncertain}
+                        onChange={(e) =>
+                          setApproveIsUncertain(e.target.checked)
+                        }
+                        className="w-4 h-4 text-primary bg-gray-100 border-gray-300 rounded focus:ring-primary focus:ring-2"
+                      />
+                      <label
+                        htmlFor="approveIsUncertain"
+                        className="text-sm font-semibold cursor-pointer"
+                      >
+                        {t('markAsUncertain')}
+                      </label>
+                    </div>
                     <div className="fixed bottom-0 right-0 p-4 flex justify-end space-x-2">
                       <Button
                         variant="outline"
                         onClick={() => {
                           setIsApproveDialogOpen(false);
                           setSelectedAnnotationId("");
+                          setApproveIsUncertain(false);
                         }}
                       >
                         {t("cancel")}

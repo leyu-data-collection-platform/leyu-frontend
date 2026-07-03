@@ -2,12 +2,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import axios, { AxiosError } from "axios";
 import { toast } from "sonner";
-import { Task, MicroTask, InvitationLinkResponse, ReviewerDatset } from "@/app/types/project";
+import { Task, MicroTask, InvitationLinkResponse, ReviewerDataset } from "@/app/types/project";
 import { PaginationResponse } from "@/app/types/global";
 import { useSession } from "next-auth/react";
 
 interface NewTaskMicroTaskResponse extends PaginationResponse<MicroTask> { }
-interface DatasetMicroTaskResponse extends PaginationResponse<ReviewerDatset> { }
+interface DatasetMicroTaskResponse extends PaginationResponse<ReviewerDataset> { }
 interface NewTaskMicroTaskProps {
   microTaskPage: number
   microTaskPageSize: number;
@@ -418,18 +418,18 @@ export const useAddUserSingleMicroTask = (
         limit: number,
         minNumberOfAcceptedDataSets: number,
         sourceTaskId: string,
-        datasetStatus: string,
-        assignedTo: string
+        targetTaskId:string,
+        datasetStatus: string
       }, "id">) => {
         if (!session?.access_token) {
           throw new Error("No authentication token available");
         }
 
-        const data = { sourceTaskId: inputdata.assignedTo, status: inputdata.status, datasetStatus: inputdata.datasetStatus, limit: inputdata.limit, minNumberOfAcceptedDataSets: inputdata.minNumberOfAcceptedDataSets };
+        const data = { sourceTaskId: inputdata.sourceTaskId, status: inputdata.status, datasetStatus: inputdata.datasetStatus, limit: inputdata.limit, minNumberOfAcceptedDataSets: inputdata.minNumberOfAcceptedDataSets };
 
 
         const response = await axios.post<MicroTask>(
-          `${process.env.NEXT_PUBLIC_API_BASE_URL}/project-mgmt/task/${inputdata.sourceTaskId}/import-contributor-from-other-task`,
+          `${process.env.NEXT_PUBLIC_API_BASE_URL}/project-mgmt/task/${inputdata.targetTaskId}/import-contributor-from-other-task`,
           data,
           {
             headers: {

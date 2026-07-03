@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { toast } from "sonner";
-import { StatisticsData_sets, StatisticsSuperadmin, StatisticsProject,StatisticsProjectContributer, SuperAdminDatasetLanguage } from "@/app/types/statistics";
+import { StatisticsData_sets, StatisticsSuperadmin, StatisticsProject, StatisticsTask, StatisticsProjectContributer, SuperAdminDatasetLanguage } from "@/app/types/statistics";
 import { PaginationResponse, SinglerResponse, AllResponse, UserLog } from "@/app/types/global";
 import { useSession } from "next-auth/react";
 
@@ -264,6 +264,79 @@ export function useSingleSuperAdminDatasetLanguage(view_type: string) {
             }
         },
         enabled: !!session?.access_token,
+        retry: (failureCount, error) => {
+            if (error.message === "No authentication token available") return false;
+            return failureCount < 2;
+        },
+    });
+}
+interface SingleStatisticsTask extends SinglerResponse<StatisticsTask> { }
+
+export function useTaskStatistics(task_id: string) {
+    const { data: session } = useSession();
+    return useQuery<SingleStatisticsTask>({
+        queryKey: ["SingleStatisticsTask", task_id],
+        queryFn: async () => {
+            try {
+                if (!session?.access_token) {
+                    throw new Error("No authentication token available");
+                }
+                const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+                const response = await axios.get<SingleStatisticsTask>(
+                    `${baseUrl}/statistics/project/task/${task_id}`,
+                    {
+                        headers: {
+                            Authorization: `Bearer ${session.access_token}`,
+                        },
+                    }
+                );
+                return response.data;
+            } catch (error) {
+                if (axios.isAxiosError(error)) {
+                    const message =
+                        error.response?.data?.message || "Failed to fetch task statistics";
+                    toast.error("Error", { description: message });
+                }
+                throw error;
+            }
+        },
+        enabled: !!session?.access_token && !!task_id,
+        retry: (failureCount, error) => {
+            if (error.message === "No authentication token available") return false;
+            return failureCount < 2;
+        },
+    });
+}
+
+export function useTaskDatasetStatistics(view_type: string, task_id: string) {
+    const { data: session } = useSession();
+    return useQuery<SingleStatisticsData_sets>({
+        queryKey: ["SingleStatisticsTaskDataset", view_type, task_id],
+        queryFn: async () => {
+            try {
+                if (!session?.access_token) {
+                    throw new Error("No authentication token available");
+                }
+                const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+                const response = await axios.get<SingleStatisticsData_sets>(
+                    `${baseUrl}/statistics/project/task-dataset/${task_id}?view_type=${view_type}`,
+                    {
+                        headers: {
+                            Authorization: `Bearer ${session.access_token}`,
+                        },
+                    }
+                );
+                return response.data;
+            } catch (error) {
+                if (axios.isAxiosError(error)) {
+                    const message =
+                        error.response?.data?.message || "Failed to fetch task dataset statistics";
+                    toast.error("Error", { description: message });
+                }
+                throw error;
+            }
+        },
+        enabled: !!session?.access_token && !!task_id,
         retry: (failureCount, error) => {
             if (error.message === "No authentication token available") return false;
             return failureCount < 2;

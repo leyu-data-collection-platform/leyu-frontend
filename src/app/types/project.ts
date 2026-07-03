@@ -434,9 +434,10 @@ export interface GenderStatistic {
   gender: 'Male' | 'Female' | string;
   count: string; // 
 }
-export interface ReviewerDatset {
+export interface ReviewerDataset {
   id: string;
   data_set_review_id: string;
+  dead_line:string;
   code: string;
   text_data_set: string;
   review_status?: string | null;
@@ -560,7 +561,7 @@ export interface FlagReason {
     name: string
   }
 }
-export interface ReviewerDatsets {
+export interface ReviewerDatasets {
   contributor_id: string;
   contributor: {
     id: string;
@@ -720,11 +721,11 @@ export interface TaskResponseData {
     is_age_specific: boolean;
     age: { min: number; max: number };
     is_sector_specific: boolean;
-    sectors: { name: string }[];
+    sectors: string[];
     is_gender_specific: boolean;
     gender: { male: number; female: number };
     is_location_specific: boolean;
-    locations: { name: string }[];
+    locations: {name:string}[];
     created_date: string;
     updated_date: string;
     reviewer_payment_per_microtask: number;
@@ -878,6 +879,14 @@ export interface InvitationTask {
   max_invitations: number,
 }
 export interface Instruction {
+  id:string,
+  taskId: string,
+  title: string,
+  content: string,
+  video_instruction_url?: string | null,
+  audio_instruction_url?: string | null
+}
+export interface CreateInstruction{
   taskId: string,
   title: string,
   content: string,
@@ -919,6 +928,9 @@ export interface UpdateTaskForm {
   language_id: string;
   is_public: boolean;
   require_contributor_test: boolean;
+  contributor_completion_time_limit?: number | null;
+  reviewer_completion_time_limit?: number | null;
+  max_expected_no_of_contributors?: number | null;
 }
 
 export interface MicroTaskList {

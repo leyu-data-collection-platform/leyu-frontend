@@ -70,21 +70,26 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({
   projectId,
 }) => {
   // Expandable Description Component
-  const ExpandableDescription: React.FC<{ text: string; maxLength?: number }> = ({ text, maxLength = 100 }) => {
+  const ExpandableDescription: React.FC<{
+    text: string;
+    maxLength?: number;
+  }> = ({ text, maxLength = 100 }) => {
     const [isExpanded, setIsExpanded] = useState(false);
     const shouldTruncate = text.length > maxLength;
-    
+
     return (
       <p className="text-xs text-gray-500">
-        {shouldTruncate && !isExpanded ? `${text.slice(0, maxLength)}... ` : text}
+        {shouldTruncate && !isExpanded
+          ? `${text.slice(0, maxLength)}... `
+          : text}
         {shouldTruncate && (
           <button
             type="button"
             onClick={() => setIsExpanded(!isExpanded)}
             className="font-medium ml-1"
-            style={{ color: '#095FAF' }}
+            style={{ color: "#095FAF" }}
           >
-            {isExpanded ? 'Show less' : 'See more'}
+            {isExpanded ? "Show less" : "See more"}
           </button>
         )}
       </p>
@@ -164,7 +169,7 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({
           `${process.env.NEXT_PUBLIC_API_BASE_URL}/setting/dialect/language/${formData.language_id}`,
           {
             headers: { Authorization: `Bearer ${session.access_token}` },
-          }
+          },
         );
         return response.data;
       },
@@ -197,7 +202,7 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({
   const handleChange = (
     e: React.ChangeEvent<
       HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
-    >
+    >,
   ) => {
     const { name, value, type } = e.target;
     if (type === "checkbox") {
@@ -238,7 +243,7 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({
   const handleNestedChange = (
     field: "age" | "gender",
     subField: string,
-    value: number
+    value: number,
   ) => {
     // Prevent negative values - allow positive, zero, and null
     if (value < 0) {
@@ -256,7 +261,7 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({
 
   const handleArrayChange = (
     field: "dialects" | "sectors" | "locations",
-    value: string
+    value: string,
   ) => {
     if (field === "locations") {
       const values = value
@@ -313,9 +318,11 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({
   };
   const selectedTaskType = taskTypeOptions.find(
     (taskType: { id: string; name: string }) =>
-      taskType.id === formData.task_type_id
+      taskType.id === formData.task_type_id,
   );
-  const isTextAudio = selectedTaskType?.name === "text-audio" || selectedTaskType?.name === "image-audio";
+  const isTextAudio =
+    selectedTaskType?.name === "text-audio" ||
+    selectedTaskType?.name === "image-audio";
   const validateStep = (currentStep: number): boolean => {
     const newErrors: { [key: string]: string } = {};
 
@@ -332,20 +339,35 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({
         }
         break;
       case 2:
-        if (!formData.max_contributor_per_micro_task || formData.max_contributor_per_micro_task <= 0) {
+        if (
+          !formData.max_contributor_per_micro_task ||
+          formData.max_contributor_per_micro_task <= 0
+        ) {
           newErrors.max_contributor_per_micro_task = "Must be greater than 0";
         }
 
-        if (!formData.max_dataset_per_reviewer || formData.max_dataset_per_reviewer <= 0) {
+        if (
+          !formData.max_dataset_per_reviewer ||
+          formData.max_dataset_per_reviewer <= 0
+        ) {
           newErrors.max_dataset_per_reviewer = "Must be greater than 0";
         }
-        if (!formData.max_reviewer_per_dataset || formData.max_reviewer_per_dataset <= 0) {
+        if (
+          !formData.max_reviewer_per_dataset ||
+          formData.max_reviewer_per_dataset <= 0
+        ) {
           newErrors.max_reviewer_per_dataset = "Must be greater than 0";
         }
-        if (formData.max_retry_per_task === null || formData.max_retry_per_task < 0) {
+        if (
+          formData.max_retry_per_task === null ||
+          formData.max_retry_per_task < 0
+        ) {
           newErrors.max_retry_per_task = "Cannot be negative";
         }
-        if (!formData.appriximate_time_per_batch || formData.appriximate_time_per_batch <= 0) {
+        if (
+          !formData.appriximate_time_per_batch ||
+          formData.appriximate_time_per_batch <= 0
+        ) {
           newErrors.approximate_time_per_batch = "Must be greater than 0";
         }
         if (isTextAudio) {
@@ -389,14 +411,21 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({
               "Must be less than maximum characters length";
           }
         }
-        if (!formData.max_micro_task_per_contributor || formData.max_micro_task_per_contributor <= 0) {
+        if (
+          !formData.max_micro_task_per_contributor ||
+          formData.max_micro_task_per_contributor <= 0
+        ) {
           newErrors.max_micro_task_per_contributor = "Must be greater than 0";
         }
 
         if (formData.batch !== null && formData.batch <= 0) {
           newErrors.batch = "Must be greater than 0";
         }
-        if (formData.batch !== null && formData.max_micro_task_per_contributor && formData.batch > formData.max_micro_task_per_contributor) {
+        if (
+          formData.batch !== null &&
+          formData.max_micro_task_per_contributor &&
+          formData.batch > formData.max_micro_task_per_contributor
+        ) {
           newErrors.batch =
             "Must be less than or equals to maximum micro task per contributor";
         }
@@ -406,7 +435,13 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({
           newErrors.dialects = "At least one dialect is required";
         }
         if (formData.is_age_specific) {
-          if (!formData.age || !formData.age.min || !formData.age.max || formData.age.min <= 0 || formData.age.max <= 0) {
+          if (
+            !formData.age ||
+            !formData.age.min ||
+            !formData.age.max ||
+            formData.age.min <= 0 ||
+            formData.age.max <= 0
+          ) {
             newErrors.age = "Both min and max age must be greater than 0";
           } else if (formData.age.min >= formData.age.max) {
             newErrors.age = "Minimum age must be less than maximum age";
@@ -549,7 +584,7 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({
                       <option key={task_type.id} value={task_type.id}>
                         {task_type.name}
                       </option>
-                    )
+                    ),
                   )}
                 </select>
                 {errors.task_type_id && (
@@ -619,7 +654,10 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({
                     className="h-4 w-4 text-primary border-gray-300 rounded focus:ring-blue-500"
                   />
                   <span className="text-sm font-medium text-gray-700">
-                    Public <span className="font-normal text-gray-500">(Any Contributor Can Join)</span>
+                    Public{" "}
+                    <span className="font-normal text-gray-500">
+                      (Any Contributor Can Join)
+                    </span>
                   </span>
                 </label>
               </div>
@@ -639,7 +677,7 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({
               </div>
               <div className="space-y-2">
                 <label className="block text-sm font-medium text-gray-700">
-                  Maximum submission per microtask {" "}
+                  Maximum submission per microtask{" "}
                   <span className="text-red-500">*</span>
                 </label>
                 <ExpandableDescription text="Refers to the maximum number of submission that can be given for a single micro task. This limit helps control the volume of submissions per micro task, ensures fair participation among microtasks, and maintains the quality and manageability of the collected data. Once the specified limit is reached, the system will prevent additional submissions and assignments for that microtask." />
@@ -664,10 +702,10 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({
               </div>
               <div className="space-y-2">
                 <label className="block text-sm font-medium text-gray-700">
-                  Contributors completion time in hours
+                  Contributors completion time in days
                   <span className="text-red-500">*</span>
                 </label>
-                <ExpandableDescription text="Refers to the maximum amount of time, measured in hours, that contributors are given to complete and submit their work for a microtask after it has been assigned. This setting helps ensure tasks are completed within a defined timeframe and allows the system to manage task availability, deadlines, and reassignment if the task is not completed within the specified period." />
+                <ExpandableDescription text="Refers to the maximum amount of time, measured in days, that contributors are given to complete and submit their work for a microtask after it has been assigned. This setting helps ensure tasks are completed within a defined timeframe and allows the system to manage task availability, deadlines, and reassignment if the task is not completed within the specified period." />
                 <input
                   name="contributor_completion_time_limit"
                   type="number"
@@ -704,10 +742,10 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({
               </div>
               <div className="space-y-2">
                 <label className="block text-sm font-medium text-gray-700">
-                  Reviewer Completion time in Hours
+                  Reviewer Completion time in Days
                   <span className="text-red-500">*</span>
                 </label>
-                <ExpandableDescription text="Refers to the maximum amount of time, measured in hours, that reviewers are given to complete and submit their work for a microtask after it has been assigned. This setting helps ensure tasks are completed within a defined timeframe and allows the system to manage task availability, deadlines, and reassignment if the task is not completed within the specified period." />
+                <ExpandableDescription text="Refers to the maximum amount of time, measured in days, that reviewers are given to complete and submit their work for a microtask after it has been assigned. This setting helps ensure tasks are completed within a defined timeframe and allows the system to manage task availability, deadlines, and reassignment if the task is not completed within the specified period." />
                 <input
                   required
                   name="reviewer_completion_time_limit"
@@ -797,7 +835,7 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({
               </div>
               <div className="space-y-2">
                 <label className="block text-sm font-medium text-gray-700">
-                  Maximum  contributors assignment per facilitator  {" "}
+                  Maximum contributors assignment per facilitator{" "}
                   <span className="text-red-500">*</span>
                 </label>
                 <ExpandableDescription text="Refers to the maximum number of contributors that can be assigned to a facilitator for monitoring and follow-up. This limit helps ensure that facilitators can effectively supervise contributors, provide guidance when needed, and maintain the quality and progress of assigned tasks." />
@@ -823,7 +861,7 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({
               </div>
               <div className="space-y-2">
                 <label className="block text-sm font-medium text-gray-700">
-                  Reviewer payment  per review{" "}
+                  Reviewer payment per review{" "}
                   <span className="text-red-500">*</span>
                 </label>
                 <ExpandableDescription text="Refers to the amount of compensation a reviewer receives for completing the review of a single dataset or microtask submission." />
@@ -875,7 +913,7 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({
               </div>
               <div className="space-y-2">
                 <label className="block text-sm font-medium text-gray-700">
-                  Approximate time to finish task {" "}
+                  Approximate time to finish task{" "}
                   <span className="text-red-500">*</span>
                 </label>
                 <ExpandableDescription text="Refers to the estimated duration, measured in minutes, that a contributor is expected to spend completing a task." />
@@ -1011,7 +1049,8 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({
               )}
               <div className="space-y-2">
                 <label className="block text-sm font-medium text-gray-700">
-                  Maximum retry per mico task <span className="text-red-500">*</span>
+                  Maximum retry per mico task{" "}
+                  <span className="text-red-500">*</span>
                 </label>
                 <ExpandableDescription text="Refers to the maximum number of times a contributor is allowed to resubmit or attempt a single microtask after an initial submission. This limit helps maintain task integrity, prevents excessive retries, and ensures timely progression of work." />
                 <input
@@ -1110,7 +1149,7 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({
                   min="0"
                   required
                   value={formData.batch ?? ""}
-                   onChange={(e) => {
+                  onChange={(e) => {
                     const value = e.target.value;
                     const numValue = value === "" ? null : Number(value);
                     // Prevent negative values - allow positive, zero, and null
@@ -1202,7 +1241,7 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({
                               <input
                                 type="checkbox"
                                 checked={formData.dialects?.includes(
-                                  dialect.id
+                                  dialect.id,
                                 )}
                                 onChange={() => handleDialectToggle(dialect.id)}
                                 className="h-4 w-4 text-primary border-gray-300 rounded focus:ring-blue-500"
@@ -1211,7 +1250,7 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({
                                 {dialect.name}
                               </span>
                             </label>
-                          )
+                          ),
                         )}
                       </div>
                     )}
@@ -1383,10 +1422,13 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({
                         value="true"
                         checked={formData.is_age_specific === true}
                         onChange={() =>
-                          setFormData({ 
-                            ...formData, 
+                          setFormData({
+                            ...formData,
                             is_age_specific: true,
-                            age: formData.age && formData.age.min > 0 ? formData.age : undefined
+                            age:
+                              formData.age && formData.age.min > 0
+                                ? formData.age
+                                : undefined,
                           })
                         }
                         className="h-4 w-4 text-primary border-gray-300 focus:ring-blue-500"
@@ -1425,7 +1467,7 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({
                           handleNestedChange(
                             "age",
                             "min",
-                            Number(e.target.value)
+                            Number(e.target.value),
                           )
                         }
                         className={`w-24 p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
@@ -1445,7 +1487,7 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({
                           handleNestedChange(
                             "age",
                             "max",
-                            Number(e.target.value)
+                            Number(e.target.value),
                           )
                         }
                         className={`w-24 p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
@@ -1504,7 +1546,7 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({
                       value={formData.sectors || []}
                       onChange={(e) => {
                         const selectedOptions = Array.from(
-                          e.target.selectedOptions
+                          e.target.selectedOptions,
                         ).map((option) => option.value);
                         setFormData((prev) => ({
                           ...prev,
@@ -1522,7 +1564,7 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({
                           <option key={sector.id} value={sector.id}>
                             {sector.name}
                           </option>
-                        )
+                        ),
                       )}
                     </select>
                     {errors.sectors && (

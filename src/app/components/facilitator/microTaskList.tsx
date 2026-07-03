@@ -50,7 +50,7 @@ import {
   getPaginationRowModel,
   flexRender,
 } from "@tanstack/react-table";
-import { MicroTask, ReviewerDatset } from "@/app/types/project";
+import { MicroTask, ReviewerDataset } from "@/app/types/project";
 import { TaskInstructions } from "@/app/types/project";
 import type { SortingState } from "@tanstack/react-table";
 import TaskDetailsGeneral from "@/app/components/projectManager/taskDetailsGeneral";

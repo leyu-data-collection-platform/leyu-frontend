@@ -48,7 +48,6 @@ import {
 import MicroTaskList from "./microTaskList";
 import { useTranslation } from "@/lib/hooks/useTranslation";
 
-
 import type { SortingState } from "@tanstack/react-table";
 interface TaskListProps {}
 interface PaginationProps {
@@ -67,7 +66,7 @@ const PaginationControls: React.FC<{ pagination: PaginationProps }> = ({
   return (
     <div className="flex items-center justify-between w-full">
       <div className="flex items-center gap-2">
-        <span className="md:text-sm text-xs text-gray-500">{t('showing')}</span>
+        <span className="md:text-sm text-xs text-gray-500">{t("showing")}</span>
         <select
           value={pagination.pageSize}
           onChange={(e) => {
@@ -115,12 +114,10 @@ const PaginationControls: React.FC<{ pagination: PaginationProps }> = ({
 
 const TaskList: React.FC<TaskListProps> = ({}) => {
   const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(5);
+  const [pageSize, setPageSize] = useState(10);
   const router = useRouter();
   const [taskSearchQuery, setTaskSearchQuery] = useState("");
   const debouncedTaskSearch = useDebounce(taskSearchQuery, 500);
-  const [taskPage, setTaskPage] = useState(1);
-  const [taskPageSize, setTaskPageSize] = useState(10);
   const [verificationStatus, setVerificationStatus] = useState<string>();
   const [showMultiTaskList, setShowMultiTaskList] = useState(false);
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
@@ -135,8 +132,8 @@ const TaskList: React.FC<TaskListProps> = ({}) => {
   const tasks: TaskCardType[] = tasksData?.data?.result || [];
   const taskTotalPages = tasksData?.data?.totalPages || 1;
   const taskTotalElements = tasksData?.data?.total || 0;
-  const taskStartRecord = tasks.length ? (taskPage - 1) * taskPageSize + 1 : 0;
-  const taskEndRecord = Math.min(taskPage * taskPageSize, taskTotalElements);
+  const taskStartRecord = tasks.length ? (page - 1) * pageSize + 1 : 0;
+  const taskEndRecord = Math.min(page * pageSize, taskTotalElements);
 
   const handleCloseModal = () => {
     setSelectedTaskId(null);
@@ -144,24 +141,20 @@ const TaskList: React.FC<TaskListProps> = ({}) => {
 
   const handleAccept = () => {
     // Handle accept logic here
-   
+
     handleCloseModal();
   };
 
   const handleReject = () => {
     // Handle reject logic here
-   
+
     handleCloseModal();
   };
-
-
 
   const handleTaskClick = (taskId: string) => {
     setSelectedTaskId(taskId);
     setShowMultiTaskList(true);
   };
-
-
 
   return (
     <div>
@@ -200,10 +193,10 @@ const TaskList: React.FC<TaskListProps> = ({}) => {
             <PaginationControls
               pagination={{
                 pageCount: taskTotalPages,
-                page: taskPage,
-                setPage: setTaskPage,
-                pageSize: taskPageSize,
-                setPageSize: setTaskPageSize,
+                page: page,
+                setPage: setPage,
+                pageSize: pageSize,
+                setPageSize: setPageSize,
                 showingText:
                   taskTotalElements > 0
                     ? `Showing ${taskStartRecord} to ${taskEndRecord} out of ${taskTotalElements} records`
