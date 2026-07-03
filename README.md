@@ -681,6 +681,37 @@ This structure provides a solid foundation for scalable development while mainta
 
 This section covers various deployment options for the LeYu Frontend application, from Docker-based deployments to traditional production builds. Choose the deployment method that best fits your infrastructure and requirements.
 
+### Quick Docker Setup
+
+For a clean Docker build experience, follow these steps:
+
+```bash
+# 1. Clone the repository
+git clone <repository-url>
+cd leyu-frontend
+
+# 2. Ensure no node_modules directory exists (clean state)
+rm -rf node_modules
+
+# 3. Copy environment file
+cp .env.example .env
+
+# 4. Build the Docker image
+docker build -t leyu-frontend:latest .
+
+# 5. Run the container
+docker run -d --name leyu-frontend-app -p 3000:3000 \
+  -e NEXT_PUBLIC_API_BASE_URL=http://localhost:3003/api \
+  -e NEXT_PUBLIC_BASE_URL=http://localhost:3000 \
+  -e NEXTAUTH_SECRET=your-strong-secret-here \
+  -e NEXTAUTH_URL=http://localhost:3000 \
+  leyu-frontend:latest
+
+# 6. Check if it's running
+docker ps
+curl -I http://localhost:3000
+```
+
 ### Docker Deployment
 
 The project includes a Dockerfile for containerized deployment, which provides a consistent environment across different deployment targets.
@@ -749,6 +780,44 @@ docker stop leyu-frontend-app
 # Remove a stopped container
 docker rm leyu-frontend-app
 ```
+
+#### Common Docker Issues and Solutions
+
+**Issue: Large build context or "invalid file request node_modules" error**
+```
+=> ERROR [internal] load build context
+=> => transferring context: 623.61MB
+failed to solve: invalid file request node_modules/-
+```
+
+**Solution**: This happens when Docker tries to include `node_modules` and other large directories in the build context. The project includes a `.dockerignore` file to prevent this, but if you're still experiencing issues:
+
+1. **Ensure .dockerignore exists**: Check that `.dockerignore` is in the same directory as your `Dockerfile`
+2. **Clean node_modules**: Remove the `node_modules` directory before building:
+   ```bash
+   rm -rf leyu-frontend/node_modules
+   docker build -t leyu-frontend:latest leyu-frontend/
+   ```
+3. **Check for hidden files**: Ensure no hidden files are causing issues:
+   ```bash
+   # List all files including hidden ones
+   ls -la leyu-frontend/
+   ```
+4. **Build from clean state**: Clone a fresh copy of the repository if the issue persists
+
+**Issue: Permission denied errors**
+```
+EACCES: permission denied, open '/app/_tmp_...'
+```
+
+**Solution**: This is handled by our multi-stage Dockerfile with proper user permissions. If you still encounter this, ensure you're using the latest Dockerfile.
+
+**Issue: TypeScript compilation errors during build**
+```
+Failed to load next.config.ts
+```
+
+**Solution**: The project now uses `next.config.js` instead of `next.config.ts` to avoid TypeScript dependencies at runtime.
 
 ### Docker Compose
 
@@ -1093,6 +1162,7 @@ Before contacting support, try these self-help options:
 
 ## License
 
+<<<<<<< HEAD
 This project's licensing information is managed by your organization. Please contact your system administrator or legal department for specific licensing details and terms of use.
 
 ### Usage Rights
@@ -1102,6 +1172,36 @@ The usage rights for the LeYu Frontend system are determined by your organizatio
 - Authorized users within your organization
 - Approved business purposes and workflows
 - Compliance with your organization's data handling and security policies
+=======
+This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENSE) file for details.
+
+### Open Source
+
+LeYu Frontend is an open source project. We welcome contributions from the community! Please read our [Contributing Guidelines](CONTRIBUTING.md) to get started.
+
+
+#### Community
+
+- **Issues**: Report bugs and request features through [GitHub Issues](../../issues)
+- **Discussions**: Join community discussions and ask questions
+- **Pull Requests**: Submit your contributions through pull requests
+
+### Usage Rights
+
+This open source project is available under the Apache License 2.0, which allows for:
+
+- Commercial and non-commercial use
+- Modification and distribution
+- Private use
+- Patent use (with explicit patent grant)
+- Sublicensing
+
+The Apache License 2.0 provides additional protections including:
+- Explicit patent grants from contributors
+- Protection against patent litigation
+- Clear attribution requirements
+- Trademark protection
+>>>>>>> d9cb356287abb515bf81c6481e89c55e38c87325
 
 ### Third-Party Licenses
 
