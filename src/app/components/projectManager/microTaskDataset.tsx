@@ -135,7 +135,30 @@ const TaskDataset: React.FC<TaskDatasetProps> = ({ microTaskId }) => {
   const [selectedSubmissionId, setSelectedSubmissionId] = useState<string | null>(null);
   const [modalSubmissionId, setModalSubmissionId] = useState<string | null>(null);
   const [isReviewStatusOpen, setIsReviewStatusOpen] = useState(false);
-  
+
+  // Bulk select/approve/reject state
+  const [selectedBulkIds, setSelectedBulkIds] = useState<Set<string>>(
+    new Set(),
+  );
+  const [isBulkRejectDialogOpen, setIsBulkRejectDialogOpen] = useState(false);
+  const [isBulkSubmitting, setIsBulkSubmitting] = useState(false);
+  const [bulkRejectionReasonIds, setBulkRejectionReasonIds] = useState<
+    string[]
+  >([]);
+  const [bulkRejectionComment, setBulkRejectionComment] = useState("");
+
+  const toggleBulkSelected = (id: string) => {
+    setSelectedBulkIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  };
+
   // Approval/Rejection states
   const [isApproveDialogOpen, setIsApproveDialogOpen] = useState(false);
   const [isRejectDialogOpen, setIsRejectDialogOpen] = useState(false);
@@ -232,10 +255,7 @@ const TaskDataset: React.FC<TaskDatasetProps> = ({ microTaskId }) => {
   const handleApprove = async () => {
     setHasAttemptedApprove(true);
     
-    console.log(selectedSubmissionId )
-     console.log( selectedAnnotationId)
-    if (!selectedSubmissionId || !selectedAnnotationId) {
-      toast.error("Please select an annotation");
+    if (!selectedSubmissionId) {
       return;
     }
 
@@ -243,9 +263,15 @@ const TaskDataset: React.FC<TaskDatasetProps> = ({ microTaskId }) => {
     try {
       await axios.put(
         `${process.env.NEXT_PUBLIC_API_BASE_URL}/reviewer-task/pm/approve/${selectedSubmissionId}`,
-        { annotation_id: selectedAnnotationId, annotation: selectedAnnotationName,annotationIds: [
-    selectedAnnotationId
-  ] },
+        {
+          ...(selectedAnnotationId
+            ? {
+                annotation_id: selectedAnnotationId,
+                annotation: selectedAnnotationName,
+                annotationIds: [selectedAnnotationId],
+              }
+            : {}),
+        },
         {
           headers: { Authorization: `Bearer ${session?.access_token}` },
         },
@@ -255,13 +281,20 @@ const TaskDataset: React.FC<TaskDatasetProps> = ({ microTaskId }) => {
       setIsApproveDialogOpen(false);
       setSelectedAnnotationId("");
       setSelectedAnnotationName("");
-      setSelectedSubmissionId(null);
       setHasAttemptedApprove(false);
 
       // Refresh data
       queryClient.invalidateQueries({
         queryKey: ["microTaskDatasets", microTaskId],
       });
+
+      // Auto-advance to the next submission instead of leaving the detail
+      // modal open on the now-approved (stale) one.
+      if (isDetailModalOpen) {
+        handleNextSubmission();
+      } else {
+        setSelectedSubmissionId(null);
+      }
     } catch (error: any) {
       toast.error("Error approving submission", {
         description:
@@ -300,13 +333,20 @@ const TaskDataset: React.FC<TaskDatasetProps> = ({ microTaskId }) => {
       setRejectionComment("");
       setSelectedRejectionTypeIds([]);
       setRejectionFlag(true);
-      setSelectedSubmissionId(null);
       setHasAttemptedReject(false);
 
       // Refresh data
       queryClient.invalidateQueries({
         queryKey: ["microTaskDatasets", microTaskId],
       });
+
+      // Auto-advance to the next submission instead of leaving the detail
+      // modal open on the now-rejected (stale) one.
+      if (isDetailModalOpen) {
+        handleNextSubmission();
+      } else {
+        setSelectedSubmissionId(null);
+      }
     } catch (error: any) {
       toast.error("Error rejecting submission", {
         description:
@@ -314,6 +354,77 @@ const TaskDataset: React.FC<TaskDatasetProps> = ({ microTaskId }) => {
       });
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const reportBulkResult = (result: {
+    succeeded: string[];
+    failed: { id: string; error: string }[];
+  }) => {
+    if (result.failed.length === 0) {
+      toast.success(`${result.succeeded.length} submission(s) processed successfully.`);
+    } else if (result.succeeded.length === 0) {
+      toast.error(`All ${result.failed.length} submission(s) failed`, {
+        description: result.failed[0]?.error,
+      });
+    } else {
+      toast.error(
+        `${result.succeeded.length} succeeded, ${result.failed.length} failed`,
+        { description: result.failed[0]?.error },
+      );
+    }
+  };
+
+  const bulkApproveMutation = async () => {
+    if (selectedBulkIds.size === 0) return;
+    setIsBulkSubmitting(true);
+    try {
+      const response = await axios.put(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/reviewer-task/pm/bulk-approve`,
+        { ids: Array.from(selectedBulkIds) },
+        { headers: { Authorization: `Bearer ${session?.access_token}` } },
+      );
+      reportBulkResult(response.data);
+      setSelectedBulkIds(new Set());
+      queryClient.invalidateQueries({ queryKey: ["microTaskDatasets", microTaskId] });
+    } catch (error: any) {
+      toast.error("Error bulk approving submissions", {
+        description: error.response?.data?.message || "An unexpected error occurred",
+      });
+    } finally {
+      setIsBulkSubmitting(false);
+    }
+  };
+
+  const bulkRejectMutation = async () => {
+    if (selectedBulkIds.size === 0 || bulkRejectionReasonIds.length === 0) {
+      toast.error("Please select at least one rejection reason.");
+      return;
+    }
+    setIsBulkSubmitting(true);
+    try {
+      const response = await axios.put(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/reviewer-task/pm/bulk-reject`,
+        {
+          ids: Array.from(selectedBulkIds),
+          rejection_type_ids: bulkRejectionReasonIds,
+          comment: bulkRejectionComment || "",
+          flag: false,
+        },
+        { headers: { Authorization: `Bearer ${session?.access_token}` } },
+      );
+      reportBulkResult(response.data);
+      setSelectedBulkIds(new Set());
+      setIsBulkRejectDialogOpen(false);
+      setBulkRejectionReasonIds([]);
+      setBulkRejectionComment("");
+      queryClient.invalidateQueries({ queryKey: ["microTaskDatasets", microTaskId] });
+    } catch (error: any) {
+      toast.error("Error bulk rejecting submissions", {
+        description: error.response?.data?.message || "An unexpected error occurred",
+      });
+    } finally {
+      setIsBulkSubmitting(false);
     }
   };
 
@@ -388,6 +499,44 @@ const TaskDataset: React.FC<TaskDatasetProps> = ({ microTaskId }) => {
 
   /* ────────────────────── Columns ────────────────────── */
   const columns: ColumnDef<ReviewerDatset>[] = [
+    {
+      id: "bulk-select",
+      header: () => {
+        const pendingIds = TaskDatasets.filter(
+          (ds) => ds.status === "Pending",
+        ).map((ds) => ds.id);
+        const allSelected =
+          pendingIds.length > 0 &&
+          pendingIds.every((id) => selectedBulkIds.has(id));
+        return (
+          <input
+            type="checkbox"
+            checked={allSelected}
+            disabled={pendingIds.length === 0}
+            onChange={() => {
+              setSelectedBulkIds((prev) => {
+                const next = new Set(prev);
+                if (allSelected) {
+                  pendingIds.forEach((id) => next.delete(id));
+                } else {
+                  pendingIds.forEach((id) => next.add(id));
+                }
+                return next;
+              });
+            }}
+          />
+        );
+      },
+      enableSorting: false,
+      cell: ({ row }) =>
+        row.original.status === "Pending" ? (
+          <input
+            type="checkbox"
+            checked={selectedBulkIds.has(row.original.id)}
+            onChange={() => toggleBulkSelected(row.original.id)}
+          />
+        ) : null,
+    },
     {
       accessorKey: "code",
       header: "ID",
@@ -721,6 +870,41 @@ const TaskDataset: React.FC<TaskDatasetProps> = ({ microTaskId }) => {
         </div>
       ) : (
         <div className="w-full">
+          {selectedBulkIds.size > 0 && (
+            <div className="flex items-center gap-3 bg-blue-50 border border-blue-100 rounded-lg px-4 py-2 mb-3">
+              <span className="text-sm font-medium text-blue-700">
+                {selectedBulkIds.size} selected
+              </span>
+              <Button
+                size="sm"
+                className="bg-[#54CB36] hover:bg-lime-600 text-white"
+                disabled={isBulkSubmitting}
+                onClick={bulkApproveMutation}
+              >
+                {isBulkSubmitting ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  "Approve Selected"
+                )}
+              </Button>
+              <Button
+                size="sm"
+                className="bg-red-600 hover:bg-red-700 text-white"
+                disabled={isBulkSubmitting}
+                onClick={() => setIsBulkRejectDialogOpen(true)}
+              >
+                Reject Selected
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={isBulkSubmitting}
+                onClick={() => setSelectedBulkIds(new Set())}
+              >
+                Clear
+              </Button>
+            </div>
+          )}
           <div className="rounded-md border border-gray-100 bg-white overflow-x-auto">
             <Table className="w-full table-auto">
               <TableHeader>
@@ -1083,37 +1267,39 @@ const TaskDataset: React.FC<TaskDatasetProps> = ({ microTaskId }) => {
             <DialogTitle>Approve Submission</DialogTitle>
           </DialogHeader>
           <div className="p-4 space-y-4">
-            <div>
-              <label
-                htmlFor="annotation"
-                className="text-sm font-semibold block mb-2"
-              >
-                Annotation <span className="text-red-500">*</span>
-              </label>
-              <select
-                id="annotation"
-                value={selectedAnnotationId}
-                onChange={(e) => {
-                  setSelectedAnnotationId(e.target.value);
-                  const selectedAnnotation = annotations.find(
-                    (annotation) => annotation.id === e.target.value,
-                  );
-                  setSelectedAnnotationName(
-                    selectedAnnotation?.name || "",
-                  );
-                }}
-                className="w-full border rounded-md p-2 mt-1 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-              >
-                <option value="">Select an annotation</option>
-                {annotations.map(
-                  (annotation: { id: string; name: string }) => (
-                    <option key={annotation.id} value={annotation.id}>
-                      {annotation.name}
-                    </option>
-                  ),
-                )}
-              </select>
-            </div>
+            {annotations.length > 0 && (
+              <div>
+                <label
+                  htmlFor="annotation"
+                  className="text-sm font-semibold block mb-2"
+                >
+                  Annotation
+                </label>
+                <select
+                  id="annotation"
+                  value={selectedAnnotationId}
+                  onChange={(e) => {
+                    setSelectedAnnotationId(e.target.value);
+                    const selectedAnnotation = annotations.find(
+                      (annotation) => annotation.id === e.target.value,
+                    );
+                    setSelectedAnnotationName(
+                      selectedAnnotation?.name || "",
+                    );
+                  }}
+                  className="w-full border rounded-md p-2 mt-1 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                >
+                  <option value="">Select an annotation</option>
+                  {annotations.map(
+                    (annotation: { id: string; name: string }) => (
+                      <option key={annotation.id} value={annotation.id}>
+                        {annotation.name}
+                      </option>
+                    ),
+                  )}
+                </select>
+              </div>
+            )}
             <div className="flex justify-end gap-2">
               <Button
                 variant="outline"
@@ -1130,7 +1316,7 @@ const TaskDataset: React.FC<TaskDatasetProps> = ({ microTaskId }) => {
               <Button
                 className="bg-[#54CB36] hover:bg-lime-600 text-white"
                 onClick={handleApprove}
-                disabled={!selectedAnnotationId || isSubmitting}
+                disabled={isSubmitting}
               >
                 {isSubmitting ? (
                   <>
@@ -1279,6 +1465,105 @@ const TaskDataset: React.FC<TaskDatasetProps> = ({ microTaskId }) => {
                   </>
                 ) : (
                   "Reject"
+                )}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Bulk Rejection Dialog */}
+      <Dialog
+        open={isBulkRejectDialogOpen}
+        onOpenChange={setIsBulkRejectDialogOpen}
+      >
+        <DialogContent className="max-w-md max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              Reject {selectedBulkIds.size} Submission
+              {selectedBulkIds.size === 1 ? "" : "s"}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="p-4 space-y-4">
+            <div>
+              <label className="text-sm font-semibold block mb-2">
+                Rejection Reasons <span className="text-red-500">*</span>
+              </label>
+              <div className="border rounded-md p-3 max-h-48 overflow-y-auto space-y-2">
+                {rejectionTypes.map((type: any) => (
+                  <label
+                    key={type.id}
+                    className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-2 rounded"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={bulkRejectionReasonIds.includes(type.id)}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setBulkRejectionReasonIds([
+                            ...bulkRejectionReasonIds,
+                            type.id,
+                          ]);
+                        } else {
+                          setBulkRejectionReasonIds(
+                            bulkRejectionReasonIds.filter(
+                              (id) => id !== type.id,
+                            ),
+                          );
+                        }
+                      }}
+                      className="w-4 h-4 text-primary focus:ring-primary"
+                    />
+                    <span className="text-sm">{type.name}</span>
+                  </label>
+                ))}
+              </div>
+              <div className="mt-2 text-xs text-gray-600">
+                {bulkRejectionReasonIds.length > 0
+                  ? `${bulkRejectionReasonIds.length} reason${bulkRejectionReasonIds.length > 1 ? "s" : ""} selected`
+                  : "No reasons selected"}
+              </div>
+            </div>
+
+            <div>
+              <label className="text-sm font-semibold block mb-2">
+                Comment (Optional)
+              </label>
+              <textarea
+                value={bulkRejectionComment}
+                onChange={(e) => setBulkRejectionComment(e.target.value)}
+                className="w-full border rounded-md p-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                rows={4}
+                placeholder="Applied to all selected submissions"
+              />
+            </div>
+
+            <div className="flex justify-end gap-2">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setIsBulkRejectDialogOpen(false);
+                  setBulkRejectionReasonIds([]);
+                  setBulkRejectionComment("");
+                }}
+                disabled={isBulkSubmitting}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={bulkRejectMutation}
+                disabled={
+                  bulkRejectionReasonIds.length === 0 || isBulkSubmitting
+                }
+              >
+                {isBulkSubmitting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Rejecting...
+                  </>
+                ) : (
+                  "Reject Selected"
                 )}
               </Button>
             </div>
