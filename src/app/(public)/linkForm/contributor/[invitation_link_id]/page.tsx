@@ -197,7 +197,7 @@ const LinkFormPage: React.FC = () => {
  
     setFormData((prev) => ({
       ...prev,
-      [name]: value.trim(),
+      [name]: value,
       ...(name === "country_id" ? { region_id: "", zone_id: "" } : {}),
       ...(name === "region_id" ? { zone_id: "" } : {}),
       ...(name === "language_id" ? { dialect_id: "" } : {}),
@@ -208,11 +208,16 @@ const LinkFormPage: React.FC = () => {
   };
 
   const validateStep1 = () => {
-    if (!formData.first_name || !formData.last_name ||!formData.middle_name) {
+    if (
+      !formData.first_name.trim() ||
+      !formData.last_name.trim() ||
+      !formData.middle_name.trim()
+    ) {
       setError("First ,middele and Last Name are required");
       return false;
     }
-    if (!formData.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+    const trimmedEmail = formData.email.trim();
+    if (!trimmedEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
       setError("Please enter a valid email address");
       return false;
     }
@@ -246,7 +251,10 @@ const LinkFormPage: React.FC = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.city || !formData.woreda) {
+    const trimmedFormData = Object.fromEntries(
+      Object.entries(formData).map(([key, value]) => [key, value.trim()])
+    ) as typeof formData;
+    if (!trimmedFormData.city || !trimmedFormData.woreda) {
       setError("City and Woreda are required");
       return;
     }
@@ -254,7 +262,7 @@ const LinkFormPage: React.FC = () => {
     mutation.mutate({
       invitationLinkId: invitation_link_id as string,
       data: {
-        ...formData,
+        ...trimmedFormData,
         confirmPassword: undefined,
       },
     });
