@@ -88,12 +88,12 @@ const CreateContributors: React.FC<CreateContributorsProps> = ({
     e.preventDefault();
 
     try {
-      addUSerMutation.mutateAsync({
+      await addUSerMutation.mutateAsync({
         memeberType: memberType,
         contributor_ids: selectedUsers, // Correctly uses selectedUsers
         taskId: taskId,
       });
-      toast.success("Contributors added successfully!");
+      // Mutation's own onSuccess already shows a success toast.
       localStorage.removeItem(`selectedUsers_${taskId}`);
       onCancel();
     } catch (error) {

@@ -454,7 +454,13 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({
           is_public: false,
           max_dataset_per_reviewer: null,
           max_reviewer_per_dataset: 1,
-          max_contributor_per_micro_task: 1,
+          // A low default here is a starvation trap: once a micro-task hits
+          // this many contributors it can never be given to anyone else for
+          // the life of the task, and the distributor drops a new
+          // contributor entirely (no partial batch) once capacity runs out
+          // -- silently, with no error anywhere. Default to something with
+          // real headroom instead of 1.
+          max_contributor_per_micro_task: 10,
           maximum_characters_length: null,
           minimum_characters_length: null,
           require_contributor_test: false,
