@@ -1,5 +1,6 @@
 // pages/Projects.tsx
 "use client";
+import AddProjectModal from "@/app/components/project/addProjectModal";
 import React, { useState, useEffect } from "react";
 import ProjectCard from "./projectCard";
 import TaskTable from "./taskTable";
@@ -21,6 +22,7 @@ const ProjectsPage: React.FC = () => {
   const [projects, setProjects] = useState<ProjectDetail[]>([]);
   const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
   const [projectToUpdate, setProjectToUpdate] = useState<Project | null>(null);
+  const [isAddProjectModalOpen, setIsAddProjectModalOpen] = useState(false);
   const [filters, setFilters] = useState<{ [key: string]: string | boolean }>(
     {}
   );
@@ -69,7 +71,6 @@ const ProjectsPage: React.FC = () => {
   }, [isprojectLoading, parojectData]);
   const router = useRouter();
   const handleTaskClick = (projectId: string) => {
-    // For Next.js App Router (src/app directory)
     router.push(`/projectmanager/projectDetail/${projectId}`);
   };
   const [taskSearchQuery, setTaskSearchQuery] = useState("");
@@ -81,7 +82,6 @@ const ProjectsPage: React.FC = () => {
     : 0;
   const projectEndRecord = Math.min(page * pageSize, parojectTotalElements);
   const [taskLoading, setTaskLoading] = useState(false);
-  // Fetch projects from the endpoint
   const handleProjectClick = (project: ProjectResponse) => {
     setSelectedProject(project);
     setIsTaskModalOpen(true);
@@ -99,7 +99,7 @@ const ProjectsPage: React.FC = () => {
         <div>
           {paginatedParojectData.length === 0 ? (
             <div>
-              <div className="flex justify-end mb-4">
+              <div className="flex justify-end items-center gap-3 mb-4">
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                   <input
@@ -119,17 +119,18 @@ const ProjectsPage: React.FC = () => {
                   initialFilters={filters}
                   endpoint={`/api/project-mgmt/project/manager/my-projects`}
                 />
+                <Button onClick={() => setIsAddProjectModalOpen(true)}>
+                  + Create Project
+                </Button>
               </div>
-              
-              {/* Empty State */}
+
               <div className="relative flex flex-col items-center justify-center py-12">
-                <img 
-                  src="/empty.svg" 
-                  alt="No projects found" 
+                <img
+                  src="/empty.svg"
+                  alt="No projects found"
                   className="w-64 h-64 opacity-50"
                 />
-                
-                {/* Loading overlay for empty state */}
+
                 {loading && (
                   <div className="absolute inset-0 bg-white bg-opacity-75 flex justify-center items-center">
                     <Loader2 className="w-6 h-6 animate-spin" />
@@ -143,7 +144,7 @@ const ProjectsPage: React.FC = () => {
             </div>
           ) : (
             <div>
-              <div className="flex justify-end mb-4">
+              <div className="flex justify-end items-center gap-3 mb-4">
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                   <input
@@ -163,6 +164,9 @@ const ProjectsPage: React.FC = () => {
                   initialFilters={filters}
                   endpoint={`/api/project-mgmt/project/manager/my-projects`}
                 />
+                <Button onClick={() => setIsAddProjectModalOpen(true)}>
+                  + Create Project
+                </Button>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 {paginatedParojectData.map((project) => (
@@ -221,12 +225,16 @@ const ProjectsPage: React.FC = () => {
                 projectTitle={selectedProject.name}
                 projectStatus={selectedProject.status}
                 createdOn={selectedProject.start_date}
-                lastUpdated={selectedProject.end_date} // Assuming 'end_date' represents the last updated date
+                lastUpdated={selectedProject.end_date}
                 description={selectedProject.description}
               />
             </div>
           )}
         </div>
+      )}
+
+      {isAddProjectModalOpen && (
+        <AddProjectModal onClose={() => setIsAddProjectModalOpen(false)} />
       )}
     </div>
   );
