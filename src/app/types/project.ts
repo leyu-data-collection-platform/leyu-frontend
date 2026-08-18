@@ -874,7 +874,7 @@ export interface InvitationTask {
   taskId: string,
   expiry_date: string,
   role: "" | "Contributor" | "Facilitator" | "Reviewer" | "QualityAssurance",
-  organization_id: string,
+  organization_id?: string,
   max_invitations: number,
 }
 export interface Instruction {

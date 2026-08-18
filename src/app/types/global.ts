@@ -115,6 +115,7 @@ export interface TaskMembers {
   gender: string;
   is_active: boolean;
   score: number;
+  submission_count?: number;
   status: string;
   role: string;
   referral_code?: string;

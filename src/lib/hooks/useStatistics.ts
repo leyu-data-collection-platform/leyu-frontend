@@ -13,18 +13,19 @@ interface StatisticsProjectContributerData extends SinglerResponse<StatisticsPro
 interface SingleStatisticsProject extends SinglerResponse<StatisticsProject> { }
 interface SingleSuperAdminDatasetLanguage extends SinglerResponse<SuperAdminDatasetLanguage> { }
 
-export function useSingleprojecStatisticsData_sets(view_type: string) {
+export function useSingleprojecStatisticsData_sets(view_type: string, anchor_date?: string) {
     const { data: session } = useSession();
     return useQuery<SingleStatisticsData_sets>({
-        queryKey: ["SingleStatisticsData_sets", view_type],
+        queryKey: ["SingleStatisticsData_sets", view_type, anchor_date],
         queryFn: async () => {
             try {
                 if (!session?.access_token) {
                     throw new Error("No authentication token available");
                 }
                 const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+                const anchorParam = anchor_date ? `&anchor_date=${anchor_date}` : "";
                 const response = await axios.get<SingleStatisticsData_sets>(
-                    `${baseUrl}/statistics/superadmin/dataset-contribution?view_type=${view_type}`,
+                    `${baseUrl}/statistics/superadmin/dataset-contribution?view_type=${view_type}${anchorParam}`,
                     {
                         headers: {
                             Authorization: `Bearer ${session.access_token}`,
@@ -199,19 +200,20 @@ export function useSingleUserlog(user_id: string, page: number, pageSize: number
     });
 }
 
-export function useSingleProjectManagerStatisticsData_sets(view_type: string, project_id: string) {
+export function useSingleProjectManagerStatisticsData_sets(view_type: string, project_id: string, anchor_date?: string) {
     const { data: session } = useSession();
     return useQuery<SingleStatisticsData_sets>({
-        queryKey: ["SingleStatisticsData_sets", view_type, project_id],
+        queryKey: ["SingleStatisticsData_sets", view_type, project_id, anchor_date],
         queryFn: async () => {
             try {
                 if (!session?.access_token) {
                     throw new Error("No authentication token available");
                 }
                 const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+                const anchorParam = anchor_date ? `&anchor_date=${anchor_date}` : "";
                 const url = project_id
-                    ? `${baseUrl}/statistics/project/project-dataset?project_id=${project_id}&view_type=${view_type}`
-                    : `${baseUrl}/statistics/project/project-dataset?view_type=${view_type}`;
+                    ? `${baseUrl}/statistics/project/project-dataset?project_id=${project_id}&view_type=${view_type}${anchorParam}`
+                    : `${baseUrl}/statistics/project/project-dataset?view_type=${view_type}${anchorParam}`;
                 const response = await axios.get<SingleStatisticsData_sets>(url, {
                     headers: {
                         Authorization: `Bearer ${session.access_token}`,

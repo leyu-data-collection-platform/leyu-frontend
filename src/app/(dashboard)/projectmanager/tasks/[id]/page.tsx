@@ -347,7 +347,7 @@ const TaskDetailPage: React.FC = () => {
   };
   const handleGenerateLink = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedOrganization || !selectedRole || !expiryDate) {
+    if (!selectedRole || !expiryDate) {
       toast.info("Missing required fields for invitation link");
       return;
     }
@@ -359,7 +359,7 @@ const TaskDetailPage: React.FC = () => {
       const responseLink = await addLinkMutation.mutateAsync({
         expiry_date: expiryDate,
         max_invitations: maxInvitations,
-        organization_id: selectedOrganization,
+        organization_id: selectedOrganization || undefined,
         taskId: taskId,
         role: selectedRole,
       });
@@ -468,11 +468,14 @@ const TaskDetailPage: React.FC = () => {
     ...(roleSearch === "Contributor"
       ? [
           {
-            accessorKey: "Submissions",
+            accessorKey: "submission_count",
             header: "Submissions",
             enableSorting: true,
             cell: ({ row }: { row: Row<TaskMembers> }) => (
-              <span className="flex items-center space-x-1">
+              <span className="flex items-center space-x-2">
+                <span className="py-2 px-2 rounded-2xl font-medium">
+                  {row.original.submission_count ?? 0}
+                </span>
                 <Button
                   className={`text-white px-2 py-2 bg-primary rounded-2xl`}
                   onClick={() => {
@@ -1295,7 +1298,7 @@ const TaskDetailPage: React.FC = () => {
                       <div className="flex items-center gap-4 mb-4">
                         <div className="flex-1">
                           <label className="text-sm font-medium text-gray-500">
-                            Organization
+                            Organization (optional)
                           </label>
                           <select
                             value={selectedOrganization}

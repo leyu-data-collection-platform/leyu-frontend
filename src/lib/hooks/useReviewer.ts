@@ -617,11 +617,11 @@ export const useApprove = () => {
     const queryClient = useQueryClient();
     const { data: session } = useSession();
     return useMutation({
-        mutationFn: async (userData: { microTaskId: string, annotation_id: string, annotation: string, annotationIds:string [] }) => {
+        mutationFn: async (userData: { microTaskId: string, annotation_id?: string, annotation?: string, annotationIds?:string [] }) => {
             if (!session?.access_token) {
                 throw new Error("No authentication token available");
             }
- 
+
             const response = await axios.put(
                 `${process.env.NEXT_PUBLIC_API_BASE_URL}/reviewer-task/approve/${userData.microTaskId}`,
                 userData,
@@ -688,11 +688,11 @@ export const useApproveQA = () => {
     const queryClient = useQueryClient();
     const { data: session } = useSession();
     return useMutation({
-        mutationFn: async (userData: { microTaskId: string, annotation_id: string, annotation: string, annotationIds:string [] }) => {
+        mutationFn: async (userData: { microTaskId: string, annotation_id?: string, annotation?: string, annotationIds?:string [] }) => {
             if (!session?.access_token) {
                 throw new Error("No authentication token available");
             }
- 
+
             const response = await axios.put(
                 `${process.env.NEXT_PUBLIC_API_BASE_URL}/reviewer-task/qa/approve/${userData.microTaskId}`,
                 userData,
