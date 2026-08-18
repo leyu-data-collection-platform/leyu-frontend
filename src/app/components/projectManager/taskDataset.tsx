@@ -187,6 +187,14 @@ const TaskDataset: React.FC<TaskDatasetProps> = ({ taskId }) => {
   // Fetch rejection types
   const [rejectionTypes, setRejectionTypes] = useState<any[]>([]);
   const [annotations, setAnnotations] = useState<any[]>([]);
+  // Approve should only offer positive-sentiment annotations (issue tags like
+  // "Background Noise" don't belong in a list of reasons to approve). Only
+  // filters once the API actually returns a `sentiment` field on at least one
+  // annotation -- falls back to the full list otherwise, so this degrades
+  // safely against a backend that hasn't added the field yet.
+  const approveAnnotations = annotations.some((a) => a.sentiment)
+    ? annotations.filter((a) => a.sentiment === "positive")
+    : annotations;
   const [hasAttemptedReject, setHasAttemptedReject] = useState(false);
   const [hasAttemptedApprove, setHasAttemptedApprove] = useState(false);
   useEffect(() => {
@@ -305,7 +313,7 @@ const TaskDataset: React.FC<TaskDatasetProps> = ({ taskId }) => {
         {
           comment: rejectionComment,
           flag: rejectionFlag,
-          rejection_type_ids: [selectedRejectionTypeIds],
+          rejection_type_ids: selectedRejectionTypeIds,
         },
         {
           headers: { Authorization: `Bearer ${session?.access_token}` },
@@ -368,7 +376,12 @@ const TaskDataset: React.FC<TaskDatasetProps> = ({ taskId }) => {
         { ids: Array.from(selectedBulkIds) },
         { headers: { Authorization: `Bearer ${session?.access_token}` } },
       );
-      reportBulkResult(response.data);
+      // The backend's GlobalResponseInterceptor wraps every response as
+      // { message, code, data: <payload> }, so the { succeeded, failed }
+      // result this endpoint returns lives at response.data.data, not
+      // response.data -- reading the outer envelope throws inside this try
+      // block on every call, regardless of whether the action succeeded.
+      reportBulkResult(response.data.data);
       setSelectedBulkIds(new Set());
       queryClient.invalidateQueries({ queryKey: ["taskDatasets", taskId] });
     } catch (error: any) {
@@ -397,7 +410,12 @@ const TaskDataset: React.FC<TaskDatasetProps> = ({ taskId }) => {
         },
         { headers: { Authorization: `Bearer ${session?.access_token}` } },
       );
-      reportBulkResult(response.data);
+      // The backend's GlobalResponseInterceptor wraps every response as
+      // { message, code, data: <payload> }, so the { succeeded, failed }
+      // result this endpoint returns lives at response.data.data, not
+      // response.data -- reading the outer envelope throws inside this try
+      // block on every call, regardless of whether the action succeeded.
+      reportBulkResult(response.data.data);
       setSelectedBulkIds(new Set());
       setIsBulkRejectDialogOpen(false);
       setBulkRejectionReasonIds([]);
@@ -1460,7 +1478,7 @@ const TaskDataset: React.FC<TaskDatasetProps> = ({ taskId }) => {
             <DialogTitle>Approve Submission</DialogTitle>
           </DialogHeader>
           <div className="p-4 space-y-4">
-            {annotations.length > 0 && (
+            {approveAnnotations.length > 0 && (
               <div>
                 <label
                   htmlFor="annotation"
@@ -1473,7 +1491,7 @@ const TaskDataset: React.FC<TaskDatasetProps> = ({ taskId }) => {
                   value={selectedAnnotationId}
                   onChange={(e) => {
                     setSelectedAnnotationId(e.target.value);
-                    const selectedAnnotation = annotations.find(
+                    const selectedAnnotation = approveAnnotations.find(
                       (annotation) => annotation.id === e.target.value,
                     );
                     setSelectedAnnotationName(selectedAnnotation?.name || "");
@@ -1481,7 +1499,7 @@ const TaskDataset: React.FC<TaskDatasetProps> = ({ taskId }) => {
                   className="w-full border rounded-md p-2 mt-1 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                 >
                   <option value="">Select an annotation</option>
-                  {annotations.map((annotation: { id: string; name: string }) => (
+                  {approveAnnotations.map((annotation: { id: string; name: string }) => (
                     <option key={annotation.id} value={annotation.id}>
                       {annotation.name}
                     </option>

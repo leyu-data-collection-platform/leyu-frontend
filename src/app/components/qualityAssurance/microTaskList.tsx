@@ -316,6 +316,14 @@ const MicroTaskList: React.FC<MicroTaskListProps> = ({
     Array.isArray(dynamicResponsedataAnnotation.data)
       ? dynamicResponsedataAnnotation.data
       : [];
+  // Approve should only offer positive-sentiment annotations (issue tags like
+  // "Background Noise" don't belong in a list of reasons to approve). Only
+  // filters once the API actually returns a `sentiment` field on at least one
+  // annotation -- falls back to the full list otherwise, so this degrades
+  // safely against a backend that hasn't added the field yet.
+  const approveAnnotations = annotations.some((a: any) => a.sentiment)
+    ? annotations.filter((a: any) => a.sentiment === "positive")
+    : annotations;
   const flagTypes =
     dynamicResponsedataFlag && Array.isArray(dynamicResponsedataFlag.data)
       ? dynamicResponsedataFlag.data
@@ -437,7 +445,12 @@ const MicroTaskList: React.FC<MicroTaskListProps> = ({
         { ids: Array.from(selectedBulkIds) },
         { headers: { Authorization: `Bearer ${session?.access_token}` } },
       );
-      reportBulkResult(response.data);
+      // The backend's GlobalResponseInterceptor wraps every response as
+      // { message, code, data: <payload> }, so the { succeeded, failed }
+      // result this endpoint returns lives at response.data.data, not
+      // response.data -- reading the outer envelope throws inside this try
+      // block on every call, regardless of whether the action succeeded.
+      reportBulkResult(response.data.data);
       setSelectedBulkIds(new Set());
       queryClient.invalidateQueries({ queryKey: ["taskMicroTasksResultReviewersQA"] });
     } catch (error) {
@@ -466,7 +479,12 @@ const MicroTaskList: React.FC<MicroTaskListProps> = ({
         },
         { headers: { Authorization: `Bearer ${session?.access_token}` } },
       );
-      reportBulkResult(response.data);
+      // The backend's GlobalResponseInterceptor wraps every response as
+      // { message, code, data: <payload> }, so the { succeeded, failed }
+      // result this endpoint returns lives at response.data.data, not
+      // response.data -- reading the outer envelope throws inside this try
+      // block on every call, regardless of whether the action succeeded.
+      reportBulkResult(response.data.data);
       setSelectedBulkIds(new Set());
       setIsBulkRejectDialogOpen(false);
       setBulkRejectionReasonIds([]);
@@ -1654,7 +1672,7 @@ const MicroTaskList: React.FC<MicroTaskListProps> = ({
                     <DialogTitle>Approve MicroTask</DialogTitle>
                   </DialogHeader>
                   <div className="p-4">
-                    {annotations.length > 0 && (
+                    {approveAnnotations.length > 0 && (
                       <div className="mb-4">
                         <label
                           htmlFor="annotation"
@@ -1667,7 +1685,7 @@ const MicroTaskList: React.FC<MicroTaskListProps> = ({
                           value={selectedAnnotationId}
                           onChange={(e) => {
                             setSelectedAnnotationId(e.target.value);
-                            const selectedAnnotation = annotations.find(
+                            const selectedAnnotation = approveAnnotations.find(
                               (annotation) => annotation.id === e.target.value,
                             );
                             setSelectedAnnotationName(
@@ -1677,7 +1695,7 @@ const MicroTaskList: React.FC<MicroTaskListProps> = ({
                           className="w-full border rounded-md p-2 mt-1"
                         >
                           <option value="">Select an annotation</option>
-                          {annotations.map(
+                          {approveAnnotations.map(
                             (annotation: { id: string; name: string }) => (
                               <option key={annotation.id} value={annotation.id}>
                                 {annotation.name}
