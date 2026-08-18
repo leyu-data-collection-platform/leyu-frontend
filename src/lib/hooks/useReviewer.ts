@@ -617,7 +617,7 @@ export const useApprove = () => {
     const queryClient = useQueryClient();
     const { data: session } = useSession();
     return useMutation({
-        mutationFn: async (userData: { microTaskId: string, annotation_id: string, annotation: string, annotationIds:string [] }) => {
+        mutationFn: async (userData: { microTaskId: string, annotation_id?: string, annotation?: string, annotationIds?:string [] }) => {
             if (!session?.access_token) {
                 throw new Error("No authentication token available");
             }
@@ -688,7 +688,7 @@ export const useApproveQA = () => {
     const queryClient = useQueryClient();
     const { data: session } = useSession();
     return useMutation({
-        mutationFn: async (userData: { microTaskId: string, annotation_id: string, annotation: string, annotationIds:string [] }) => {
+        mutationFn: async (userData: { microTaskId: string, annotation_id?: string, annotation?: string, annotationIds?:string [] }) => {
             if (!session?.access_token) {
                 throw new Error("No authentication token available");
             }
