@@ -1,5 +1,6 @@
 export interface StatisticsSuperadmin {
     "total_micro_tasks": number,
+    "total_data_sets": number,
     "total_projects": number,
     "total_tasks": number,
     "total_contributors": number,
@@ -16,6 +17,9 @@ export interface StatisticsProject {
     "total_facilitators": number,
     "total_reviewers": number,
     "total_data_sets": number,
+    "avg_pending_hours": number,
+    "oldest_pending_hours": number,
+    "pending_count": number,
     "project": {
         id: string,
         name: string

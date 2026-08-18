@@ -396,6 +396,10 @@ export const translations = {
   answerLabel: { en: 'Answer', am: 'መልስ', om: 'Deebii' },
   microTasksBreadcrumb: { en: 'Micro tasks', am: 'ጥቃቅን ተግባራት', om: 'Hojiiwwan xixinnoo' },
   typeLabel: { en: 'Type:', am: 'ዓይነት:', om: 'Gosa:' },
+  contributorScore: { en: 'Contributor Score', am: 'የአበርካች ውጤት', om: 'Qabxii Hirmaataa' },
+  previouslyRejectedFor: { en: 'Previously rejected for', am: 'ቀደም ሲል ውድቅ የተደረገበት ምክንያት', om: 'Kanaan dura kan kuffifameef' },
+  searchByContributorOrDataset: { en: 'Search by contributor or dataset...', am: 'በአበርካች ወይም በዳታ ስብስብ ፈልግ...', om: 'Hirmaataa ykn kuusaa deetaadhaan barbaadi...' },
+  ageHeader: { en: 'Age', am: 'ዕድሜ', om: 'Umurii' },
 
   // Statistics metrics
   pendingMicroTasks: { en: 'Pending micro tasks', am: 'በጥበቃ ላይ ያሉ ጥቃቅን ተግባራት', om: 'Hojiiwwan xixinnoo eegamaa' },

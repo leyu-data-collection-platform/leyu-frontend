@@ -1,7 +1,8 @@
 "use client";
 
 import { useSession } from "next-auth/react";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
 import { Bar, Line } from "react-chartjs-2";
 import {
   useSingleprojecStatisticsData_sets,
@@ -46,12 +47,60 @@ export default function UsersPage() {
   const [viewType, setViewType] = useState("YEARLY");
   const [viewTypeDatasetLanguage, setViewTypeDatasetLanguage] =
     useState("LANGUAGE");
+  // Reference point for the WEEKLY 7-day window / MONTHLY 12-month year --
+  // lets the dashboard page back through earlier weeks/years instead of
+  // always being stuck on the window ending today. Resets to today whenever
+  // the view type changes.
+  const [anchorDate, setAnchorDate] = useState<Date>(() => new Date());
+  useEffect(() => {
+    setAnchorDate(new Date());
+  }, [viewType]);
+  const isAtLatestWindow = (() => {
+    const now = new Date();
+    if (viewType === "WEEKLY") {
+      return anchorDate.toDateString() === now.toDateString();
+    }
+    if (viewType === "MONTHLY") {
+      return anchorDate.getFullYear() === now.getFullYear();
+    }
+    return true;
+  })();
+  const goToPreviousWindow = () => {
+    setAnchorDate((prev) => {
+      const next = new Date(prev);
+      if (viewType === "WEEKLY") next.setDate(next.getDate() - 7);
+      else if (viewType === "MONTHLY") next.setFullYear(next.getFullYear() - 1);
+      return next;
+    });
+  };
+  const goToNextWindow = () => {
+    setAnchorDate((prev) => {
+      const now = new Date();
+      const next = new Date(prev);
+      if (viewType === "WEEKLY") next.setDate(next.getDate() + 7);
+      else if (viewType === "MONTHLY") next.setFullYear(next.getFullYear() + 1);
+      return next > now ? now : next;
+    });
+  };
+  const windowLabel = (() => {
+    if (viewType === "WEEKLY") {
+      const start = new Date(anchorDate);
+      start.setDate(start.getDate() - 6);
+      const fmt = (d: Date) =>
+        d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+      return `${fmt(start)} – ${fmt(anchorDate)}, ${anchorDate.getFullYear()}`;
+    }
+    if (viewType === "MONTHLY") {
+      return anchorDate.getFullYear().toString();
+    }
+    return null;
+  })();
 
   // Fetch superadmin statistics
   const { data: superadminData, isLoading: superadminLoading } =
     useSingleprojecStatisticsSuperadmins();
   const { data: datasetData, isLoading: datasetLoading } =
-    useSingleprojecStatisticsData_sets(viewType);
+    useSingleprojecStatisticsData_sets(viewType, anchorDate.toISOString());
   const {
     data: datasetDatanDatasetLanguage,
     isLoading: datasetLoadingnDatasetLanguage,
@@ -148,6 +197,12 @@ export default function UsersPage() {
           icon: TotalMicroTasksIcon,
         },
         {
+          title: "Total Data sets",
+          value: superadminData.data.total_data_sets,
+          change: "bg-blue-100",
+          icon: TotalMicroTasksIcon,
+        },
+        {
           title: "Total Users",
           value:
             superadminData.data.total_reviewers +
@@ -172,6 +227,12 @@ export default function UsersPage() {
         },
         {
           title: "Total Micro Tasks",
+          value: 0,
+          change: "+0% from yesterday",
+          icon: "",
+        },
+        {
+          title: "Total Data sets",
           value: 0,
           change: "+0% from yesterday",
           icon: "",
@@ -268,10 +329,19 @@ export default function UsersPage() {
           let index: number;
           switch (viewType) {
             case "WEEKLY":
-              index = (date - 1) % 7; // Map 1-7 to 0-6 index
+              // Backend sends JS Date.getDay() (0=Sun..6=Sat), but labels
+              // are Mon-first -- shifting by +6 before the mod remaps Sun
+              // (0) to index 6 instead of the negative index (date-1)
+              // produced, which never matched any label and silently
+              // dropped Sunday's bar from the chart entirely.
+              index = (date + 6) % 7;
               break;
             case "MONTHLY":
-              index = (date - 1) % 12; // Map 1-12 to 0-11 index
+              // Backend sends JS Date.getMonth(), already 0-indexed
+              // (Jan=0..Dec=11), matching the labels array's own indexing
+              // (built the same way). Subtracting 1 shifted every month
+              // back by one label -- e.g. August's data rendered under "Jul".
+              index = date % 12;
               break;
             case "YEARLY":
               index = [
@@ -356,7 +426,7 @@ export default function UsersPage() {
       <div className="flex">
         <div className="w-full min-h-screen bg-white p-2">
           {/* Metric Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-1 lg:grid-cols-4 gap-4 mb-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
             {metrics.map((metric, index) => (
               <div
                 key={index}
@@ -422,9 +492,32 @@ export default function UsersPage() {
             {/* Total Dataset (Approved) */}
             <div className="bg-white p-4 rounded-lg ">
               <div className="flex justify-between items-center mb-4">
-                <h2 className="text-lg font-semibold text-gray-900">
-                  {/* Title handled by chart options */}
-                </h2>
+                <div className="flex items-center gap-2">
+                  {windowLabel && (
+                    <>
+                      <button
+                        type="button"
+                        aria-label="Previous period"
+                        onClick={goToPreviousWindow}
+                        className="p-1 rounded border border-gray-200 hover:bg-gray-50 text-gray-600"
+                      >
+                        <ChevronLeftIcon className="w-4 h-4" />
+                      </button>
+                      <span className="text-sm font-medium text-gray-700 min-w-[140px] text-center">
+                        {windowLabel}
+                      </span>
+                      <button
+                        type="button"
+                        aria-label="Next period"
+                        onClick={goToNextWindow}
+                        disabled={isAtLatestWindow}
+                        className="p-1 rounded border border-gray-200 hover:bg-gray-50 text-gray-600 disabled:opacity-30 disabled:cursor-not-allowed"
+                      >
+                        <ChevronRightIcon className="w-4 h-4" />
+                      </button>
+                    </>
+                  )}
+                </div>
                 <select
                   className="border border-gray-300 rounded px-2 py-1 text-sm text-gray-700 bg-white"
                   value={viewType}

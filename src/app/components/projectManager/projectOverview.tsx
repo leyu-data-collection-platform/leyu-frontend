@@ -1,6 +1,6 @@
 "use client";
 import { useSession } from "next-auth/react";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Bar, Line } from "react-chartjs-2";
 import {
   useSingleprojecStatisticsProject,
@@ -21,7 +21,7 @@ import {
   Color,
   TooltipItem,
 } from "chart.js";
-import { Loader2 } from "lucide-react";
+import { Loader2, ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
 ChartJS.register(
   CategoryScale,
   LinearScale,
@@ -55,10 +55,62 @@ interface TaskTableProps {
 }
 const ProjectOverview: React.FC<TaskTableProps> = ({ projectId }) => {
   const [viewType, setViewType] = useState("WEEKLY");
+  // Reference point for the WEEKLY 7-day window / MONTHLY 12-month year --
+  // lets the PM page back through earlier weeks/years instead of always
+  // being stuck on the window ending today. Resets to today whenever the
+  // view type changes.
+  const [anchorDate, setAnchorDate] = useState<Date>(() => new Date());
+  useEffect(() => {
+    setAnchorDate(new Date());
+  }, [viewType]);
+  const isAtLatestWindow = (() => {
+    const now = new Date();
+    if (viewType === "WEEKLY") {
+      return anchorDate.toDateString() === now.toDateString();
+    }
+    if (viewType === "MONTHLY") {
+      return anchorDate.getFullYear() === now.getFullYear();
+    }
+    return true;
+  })();
+  const goToPreviousWindow = () => {
+    setAnchorDate((prev) => {
+      const next = new Date(prev);
+      if (viewType === "WEEKLY") next.setDate(next.getDate() - 7);
+      else if (viewType === "MONTHLY") next.setFullYear(next.getFullYear() - 1);
+      return next;
+    });
+  };
+  const goToNextWindow = () => {
+    setAnchorDate((prev) => {
+      const now = new Date();
+      const next = new Date(prev);
+      if (viewType === "WEEKLY") next.setDate(next.getDate() + 7);
+      else if (viewType === "MONTHLY") next.setFullYear(next.getFullYear() + 1);
+      return next > now ? now : next;
+    });
+  };
+  const windowLabel = (() => {
+    if (viewType === "WEEKLY") {
+      const start = new Date(anchorDate);
+      start.setDate(start.getDate() - 6);
+      const fmt = (d: Date) =>
+        d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+      return `${fmt(start)} – ${fmt(anchorDate)}, ${anchorDate.getFullYear()}`;
+    }
+    if (viewType === "MONTHLY") {
+      return anchorDate.getFullYear().toString();
+    }
+    return null;
+  })();
   const { data: superadminData, isLoading: superadminLoading } =
     useSingleprojecStatisticsProject(projectId);
   const { data: datasetData, isLoading: datasetLoading } =
-    useSingleProjectManagerStatisticsData_sets(viewType, projectId);
+    useSingleProjectManagerStatisticsData_sets(
+      viewType,
+      projectId,
+      anchorDate.toISOString()
+    );
   const projecIcon = (
     <svg
       width="47"
@@ -190,10 +242,19 @@ const ProjectOverview: React.FC<TaskTableProps> = ({ projectId }) => {
           let index: number;
           switch (viewType) {
             case "WEEKLY":
-              index = (date - 1) % 7; // Map 1-7 to 0-6 index
+              // Backend sends JS Date.getDay() (0=Sun..6=Sat), but labels
+              // are Mon-first -- shifting by +6 before the mod remaps Sun
+              // (0) to index 6 instead of the negative index (date-1)
+              // produced, which never matched any label and silently
+              // dropped Sunday's bar from the chart entirely.
+              index = (date + 6) % 7;
               break;
             case "MONTHLY":
-              index = (date - 1) % 12; // Map 1-12 to 0-11 index
+              // Backend sends JS Date.getMonth(), already 0-indexed
+              // (Jan=0..Dec=11), matching the labels array's own indexing
+              // (built the same way). Subtracting 1 shifted every month
+              // back by one label -- e.g. August's data rendered under "Jul".
+              index = date % 12;
               break;
             case "YEARLY":
               index = [
@@ -287,9 +348,32 @@ const ProjectOverview: React.FC<TaskTableProps> = ({ projectId }) => {
       {/* Chart */}
       <div className="bg-white p-4 rounded-lg shadow-sm">
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-lg font-semibold text-gray-900">
-            {/* Title handled by chart options */}
-          </h2>
+          <div className="flex items-center gap-2">
+            {windowLabel && (
+              <>
+                <button
+                  type="button"
+                  aria-label="Previous period"
+                  onClick={goToPreviousWindow}
+                  className="p-1 rounded border border-gray-200 hover:bg-gray-50 text-gray-600"
+                >
+                  <ChevronLeftIcon className="w-4 h-4" />
+                </button>
+                <span className="text-sm font-medium text-gray-700 min-w-[140px] text-center">
+                  {windowLabel}
+                </span>
+                <button
+                  type="button"
+                  aria-label="Next period"
+                  onClick={goToNextWindow}
+                  disabled={isAtLatestWindow}
+                  className="p-1 rounded border border-gray-200 hover:bg-gray-50 text-gray-600 disabled:opacity-30 disabled:cursor-not-allowed"
+                >
+                  <ChevronRightIcon className="w-4 h-4" />
+                </button>
+              </>
+            )}
+          </div>
           <select
             className="border border-gray-300 rounded px-2 py-1 text-sm text-gray-700 bg-white"
             value={viewType}

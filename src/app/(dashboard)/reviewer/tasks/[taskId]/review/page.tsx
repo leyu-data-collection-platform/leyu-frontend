@@ -8,6 +8,7 @@ import { formatDateMedium } from "@/app/types/dateUtils";
 import { useTranslation } from "@/lib/hooks/useTranslation";
 import { TaskInstructions, TaskInstructionsReviwer } from "@/app/types/project";
 import InstructionView from "@/app/components/reviewer/instructionView";
+import { useDebounce } from "@/lib/hooks/useDebounce";
 export default function ReviewerTaskReviewPage() {
   const params = useParams();
   const taskId = (params?.taskId as string) || "";
@@ -23,6 +24,8 @@ export default function ReviewerTaskReviewPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [activeButton, setActiveButton] = useState<string>("Pending");
   const [isInnerDialogOpen, setIsInnerDialogOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const debouncedSearch = useDebounce(searchQuery, 500);
 
   // Load task data from localStorage
   useEffect(() => {
@@ -42,6 +45,9 @@ export default function ReviewerTaskReviewPage() {
     setActiveButton(button);
     setMicroTaskPage(1); // Reset page when changing status
   };
+  useEffect(() => {
+    setMicroTaskPage(1); // Reset page when the search term changes
+  }, [debouncedSearch]);
   const [selectedInstruction, setSelectedInstruction] = useState<any>(null);
   const [showInstruction, setShowInstruction] = useState(false);
   const [isInstructionFullScreen, setIsInstructionFullScreen] = useState(false);
@@ -128,6 +134,15 @@ export default function ReviewerTaskReviewPage() {
                   ) : (
                     <></>
                   )}
+                  <div className="px-2 mb-4 max-w-sm">
+                    <input
+                      type="text"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      placeholder={t("searchByContributorOrDataset") || "Search by contributor or dataset..."}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                    />
+                  </div>
                   <div className="flex flex-row">
                     <Button
                       className={`mr-4 mb-4 w-35 border-r-background px-4 py-2 rounded-full text-sm font-medium ${activeButton === "Pending" ? "bg-primary text-white" : "bg-white text-gray-800"}`}
@@ -185,7 +200,7 @@ export default function ReviewerTaskReviewPage() {
                 setMicroTaskPage={setMicroTaskPage}
                 microTaskPageSize={microTaskPageSize}
                 setMicroTaskPageSize={setMicroTaskPageSize}
-                searchQuery=""
+                searchQuery={debouncedSearch}
                 status_data={activeButton}
                 verificationStatus={verificationStatus}
                 setVerificationStatus={setVerificationStatus}

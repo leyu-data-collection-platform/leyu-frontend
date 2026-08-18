@@ -8,6 +8,7 @@ import { formatDateMedium } from "@/app/types/dateUtils";
 import TaskDetailsGeneral from "@/app/components/qualityAssurance/taskDetailsGeneral";
 import { filterComponentReviewer as FilterComponentReviewer } from "@/components/ui/filterComponentReviewer";
 import { useTranslation } from "@/lib/hooks/useTranslation";
+import { useDebounce } from "@/lib/hooks/useDebounce";
 
 export default function ReviewerTaskReviewPage() {
   const params = useParams();
@@ -27,6 +28,8 @@ export default function ReviewerTaskReviewPage() {
   const [activeButton, setActiveButton] = useState<string>("Pending");
   const [isInnerDialogOpen, setIsInnerDialogOpen] = useState(false);
   const [selectedReviewerIds, setSelectedReviewerIds] = useState<string[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const debouncedSearch = useDebounce(searchQuery, 500);
 
   // Load task data from localStorage
   useEffect(() => {
@@ -51,6 +54,9 @@ export default function ReviewerTaskReviewPage() {
     setSelectedReviewerIds(reviewerIds);
     setMicroTaskPage(1); // Reset page when filter changes
   };
+  useEffect(() => {
+    setMicroTaskPage(1); // Reset page when the search term changes
+  }, [debouncedSearch]);
   return (
     <AuthenticatedPage loadingMessage={t('loadingTaskReviewPage')}>
       <div className="flex flex-row py-3 px-2 mb-4">
@@ -129,7 +135,16 @@ export default function ReviewerTaskReviewPage() {
                       <span className="text-xs">{t('flagged')}</span>
                     </Button>
                   </div>
-                  <FilterComponentReviewer taskId={taskId} onFilterChange={handleReviewerFilterChange} />
+                  <div className="flex flex-row items-center gap-2">
+                    <input
+                      type="text"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      placeholder={t("searchByContributorOrDataset") || "Search by contributor or dataset..."}
+                      className="w-64 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                    />
+                    <FilterComponentReviewer taskId={taskId} onFilterChange={handleReviewerFilterChange} />
+                  </div>
                 </div>
               )}
               <MicroTaskList
@@ -142,7 +157,7 @@ export default function ReviewerTaskReviewPage() {
                 setMicroTaskPage={setMicroTaskPage}
                 microTaskPageSize={microTaskPageSize}
                 setMicroTaskPageSize={setMicroTaskPageSize}
-                searchQuery=""
+                searchQuery={debouncedSearch}
                 status_data={activeButton}
                 verificationStatus={verificationStatus}
                 setVerificationStatus={setVerificationStatus}
