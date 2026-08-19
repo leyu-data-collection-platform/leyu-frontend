@@ -75,7 +75,7 @@ export const translations = {
   firstName: { en: 'First Name', am: 'ስም', om: 'Maqaa' },
   middleName: { en: 'Middle Name (Father Name)', am: 'የአባት ስም', om: 'Maqaa Abbaa' },
   lastName: { en: 'Last Name (Grandfather Name)', am: 'የአያት ስም', om: 'Maqaa Akaakayyuu' },
-  birthDate: { en: 'Birth Date', am: 'የልደት ቀን', om: 'Guyyaa dhalootaa' },
+  age: { en: 'Age', am: 'ዕድሜ', om: 'Umr' },
   genderLabel: { en: 'Gender', am: 'ጾታ', om: 'Saala' },
   male: { en: 'Male', am: 'ወንድ', om: 'Dhiira' },
   female: { en: 'Female', am: 'ሴት', om: 'Dubartii' },

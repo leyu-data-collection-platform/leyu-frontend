@@ -194,10 +194,7 @@ export default function AddUserForm({
     (r) => r.id === formData.role_id
   )?.name;
 
-  const hideLanguageAndDialect =
-    !formData.role_id ||
-    selectedRoleName === "Admin" ||
-    selectedRoleName === "ProjectManager";
+  const hideLanguageAndDialect = !formData.role_id;
 
   useEffect(() => {
     if (
@@ -266,7 +263,7 @@ export default function AddUserForm({
         middle_name: formData.middle_name,
         last_name: formData.last_name,
         email: formData.email,
-        birth_date: JSON.stringify(formData.birth_date),
+        birth_date: formData.birth_date,
         gender: formData.gender,
         role_id: formData.role_id,
         password: formData.password,

@@ -1170,49 +1170,45 @@ const TaskDetailPage: React.FC = () => {
                             />
                           ) : null}
 
-                          {!task.is_public && (
-                            <>
-                              {showCreateContributorsForm ? (
-                                <CreateContributors
-                                  open={showCreateContributorsForm}
-                                  setOpen={setShowCreateContributorsForm}
-                                  taskId={taskId}
-                                  onCancel={() => {
-                                    setShowCreateContributorsForm(false);
-                                    localStorage.removeItem(
-                                      `selectedUsers_${taskId}`,
-                                    );
-                                  }}
-                                  memberType={memebrType}
-                                />
-                              ) : null}
+                          {showCreateContributorsForm ? (
+                            <CreateContributors
+                              open={showCreateContributorsForm}
+                              setOpen={setShowCreateContributorsForm}
+                              taskId={taskId}
+                              onCancel={() => {
+                                setShowCreateContributorsForm(false);
+                                localStorage.removeItem(
+                                  `selectedUsers_${taskId}`,
+                                );
+                              }}
+                              memberType={memebrType}
+                            />
+                          ) : null}
 
-                              <div className="border border-gray-100 rounded-lg p-4 bg-white ">
-                                <div className="flex items-center gap-2 mb-2">
-                                  <div className="w-8 h-8 bg-blue-200 flex items-center justify-center rounded-full">
-                                    <span className="text-blue-800 font-medium text-sm">
-                                      Co
-                                    </span>
-                                  </div>
-                                  <div>
-                                    <h3 className="text-sm font-medium text-gray-900">
-                                      Contributor
-                                    </h3>
-                                  </div>
-                                </div>
-                                <button
-                                  onClick={() => {
-                                    setMemebrType("Contributors");
-                                    setShowCreateContributorsForm(true);
-                                  }}
-                                  className="w-full flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700"
-                                >
-                                  <UserPlus className="h-4 w-4 mr-2" />
-                                  Invite Contributor
-                                </button>
+                          <div className="border border-gray-100 rounded-lg p-4 bg-white ">
+                            <div className="flex items-center gap-2 mb-2">
+                              <div className="w-8 h-8 bg-blue-200 flex items-center justify-center rounded-full">
+                                <span className="text-blue-800 font-medium text-sm">
+                                  Co
+                                </span>
                               </div>
-                            </>
-                          )}
+                              <div>
+                                <h3 className="text-sm font-medium text-gray-900">
+                                  Contributor
+                                </h3>
+                              </div>
+                            </div>
+                            <button
+                              onClick={() => {
+                                setMemebrType("Contributors");
+                                setShowCreateContributorsForm(true);
+                              }}
+                              className="w-full flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700"
+                            >
+                              <UserPlus className="h-4 w-4 mr-2" />
+                              Invite Contributor
+                            </button>
+                          </div>
 
                           <div className="border border-gray-100 rounded-lg p-4 bg-white ">
                             <div className="flex items-center gap-2 mb-2">
